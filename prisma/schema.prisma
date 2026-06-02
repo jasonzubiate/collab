@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String?
+  passwordHash String?
+  brandId      String
+  brand        Brand    @relation(fields: [brandId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Brand {
+  id                  String     @id @default(uuid())
+  companyName         String
+  slug                String     @unique
+  instagramBusinessId String?    @unique
+  users               User[]
+  campaigns           Campaign[]
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+}
+
+model Campaign {
+  id       String  @id @default(uuid())
+  brandId  String
+  brand    Brand   @relation(fields: [brandId], references: [id])
+  name     String
+  slug     String
+  isActive Boolean @default(false)
+
+  minFollowers      Int
+  minEngagementRate Decimal @db.Decimal(5, 2)
+
+  baseRatePer10kCents    Int
+  ratePerReelCents       Int
+  ratePerStoryCents      Int
+  adUsage30DayMultiplier Decimal @db.Decimal(5, 2)
+  adUsage90DayMultiplier Decimal @db.Decimal(5, 2)
+
+  proposalDrafts ProposalDraft[]
+  proposals      Proposal[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([brandId, slug])
+}
+
+model ProposalDraft {
+  id         String   @id @default(uuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id])
+
+  creatorHandle String
+  creatorName   String?
+  creatorEmail  String
+
+  followerCount      Int
+  engagementRate     Decimal @db.Decimal(5, 2)
+  enrichmentProvider String  @default("mock")
+  enrichmentPayload  Json?
+
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Proposal {
+  id         String   @id @default(uuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id])
+
+  creatorHandle String
+  creatorName   String?
+  creatorEmail  String
+
+  followerCount      Int
+  engagementRate     Decimal @db.Decimal(5, 2)
+  enrichmentProvider String  @default("mock")
+  enrichmentPayload  Json?
+
+  reelsCount   Int
+  storiesCount Int
+  adUsageDays  Int
+
+  calculatedPayoutCents Int
+  matchTier             MatchTier
+  workflowStatus        WorkflowStatus @default(NEW)
+
+  contactedAt DateTime?
+  approvedAt  DateTime?
+  rejectedAt  DateTime?
+  adminNotes  String?
+
+  events    ProposalEvent[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
+model ProposalEvent {
+  id         String            @id @default(uuid())
+  proposalId String
+  proposal   Proposal          @relation(fields: [proposalId], references: [id])
+  type       ProposalEventType
+  metadata   Json?
+  createdAt  DateTime          @default(now())
+}
+
+enum MatchTier {
+  GREEN
+  YELLOW
+  ARCHIVED
+}
+
+enum WorkflowStatus {
+  NEW
+  CONTACTED
+  APPROVED
+  REJECTED
+}
+
+enum ProposalEventType {
+  CREATED
+  CONTACTED
+  APPROVED
+  REJECTED
+  STATUS_CHANGED
+  EMAIL_OPENED
+  EXPORTED
+}
