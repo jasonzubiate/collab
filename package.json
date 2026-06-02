@@ -20,6 +20,9 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@heroui/react": "^3.1.0",
+    "@heroui/styles": "^3.1.0",
+    "@internationalized/date": "^3.12.2",
     "@prisma/adapter-neon": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "bcryptjs": "^3.0.3",
@@ -31,6 +34,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.77.0",
+    "tailwind-variants": "^3.2.2",
     "zod": "^4.4.3"
   },
   "devDependencies": {

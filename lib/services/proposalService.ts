@@ -5,6 +5,7 @@ import { evaluateProposal } from "@/lib/pricing/evaluateProposal";
 import type { MatchTier, RequestedScope } from "@/lib/pricing/types";
 import { formatCents } from "@/lib/money";
 import { getEnrichmentProvider } from "@/lib/enrichment";
+import { pseudoHandleForIgsid } from "@/lib/instagram/identity";
 import {
   campaignToPricing,
   getActiveCampaignByBrandSlug,
@@ -67,6 +68,85 @@ export async function startProposalDraft(
     ok: true,
     draftId: draft.id,
     campaign: { id: campaign.id, name: campaign.name },
+    metrics: {
+      followerCount: profile.followerCount,
+      engagementRate: profile.engagementRate,
+    },
+    gatekeeper: {
+      matchTier: evaluation.matchTier,
+      passedThresholds: evaluation.passedThresholds,
+      failedFollowerThreshold: evaluation.failedFollowerThreshold,
+      failedEngagementThreshold: evaluation.failedEngagementThreshold,
+    },
+  };
+}
+
+export type StartDmDraftResult =
+  | { ok: false; reason: "CAMPAIGN_NOT_FOUND" }
+  | {
+      ok: true;
+      draftId: string;
+      creatorHandle: string;
+      metrics: { followerCount: number; engagementRate: number };
+      gatekeeper: {
+        matchTier: MatchTier;
+        passedThresholds: boolean;
+        failedFollowerThreshold: boolean;
+        failedEngagementThreshold: boolean;
+      };
+    };
+
+/**
+ * DM-channel variant of {@link startProposalDraft}. Reuses the same enrich →
+ * evaluate → persist flow but keys off a campaign id directly, derives a
+ * pseudo-handle from the IGSID, and leaves `creatorEmail` null (PRD sections 8
+ * and 10). The returned `draftId` feeds the unchanged `estimateProposal` /
+ * `submitProposal` services.
+ */
+export async function startDmProposalDraft(input: {
+  campaignId: string;
+  instagramScopedUserId: string;
+}): Promise<StartDmDraftResult> {
+  const campaign = await prisma.campaign.findUnique({
+    where: { id: input.campaignId },
+  });
+  if (!campaign) return { ok: false, reason: "CAMPAIGN_NOT_FOUND" };
+
+  const provider = getEnrichmentProvider();
+  const handle = pseudoHandleForIgsid(input.instagramScopedUserId);
+  const profile = await provider.enrich(handle);
+
+  const pricing = campaignToPricing(campaign);
+  const evaluation = evaluateProposal({
+    pricing,
+    metrics: {
+      followerCount: profile.followerCount,
+      engagementRate: profile.engagementRate,
+    },
+  });
+
+  const draft = await prisma.proposalDraft.create({
+    data: {
+      campaignId: campaign.id,
+      creatorHandle: profile.handle,
+      creatorName: null,
+      creatorEmail: null,
+      followerCount: profile.followerCount,
+      engagementRate: profile.engagementRate,
+      enrichmentProvider: profile.provider,
+      enrichmentPayload:
+        profile.raw == null
+          ? Prisma.JsonNull
+          : (profile.raw as Prisma.InputJsonValue),
+      source: "INSTAGRAM_DM",
+      expiresAt: new Date(Date.now() + DRAFT_TTL_MS),
+    },
+  });
+
+  return {
+    ok: true,
+    draftId: draft.id,
+    creatorHandle: profile.handle,
     metrics: {
       followerCount: profile.followerCount,
       engagementRate: profile.engagementRate,

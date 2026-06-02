@@ -77,6 +77,14 @@ export const updateProposalSchema = z
     { message: "No fields to update." },
   );
 
+export const instagramReplySchema = z.object({
+  text: z
+    .string()
+    .trim()
+    .min(1, "Message is required.")
+    .max(1000, "Message is too long."),
+});
+
 export const proposalFiltersSchema = z.object({
   matchTier: matchTierSchema.optional(),
   workflowStatus: workflowStatusSchema.optional(),
@@ -92,3 +100,4 @@ export type EstimateInput = z.infer<typeof estimateSchema>;
 export type SubmitProposalInput = z.infer<typeof submitProposalSchema>;
 export type UpdateProposalInput = z.infer<typeof updateProposalSchema>;
 export type ProposalFilters = z.infer<typeof proposalFiltersSchema>;
+export type InstagramReplyInput = z.infer<typeof instagramReplySchema>;

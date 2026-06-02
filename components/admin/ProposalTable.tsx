@@ -1,5 +1,6 @@
 "use client";
 
+import { Table } from "@heroui/react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
   formatCents,
@@ -45,63 +46,69 @@ export function ProposalTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-surface">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-border text-left text-xs text-muted-foreground">
-            <th className="px-4 py-2.5 font-medium">Creator</th>
-            <th className="px-4 py-2.5 text-right font-medium">Followers</th>
-            <th className="hidden px-4 py-2.5 text-right font-medium sm:table-cell">
+    <Table>
+      <Table.ScrollContainer>
+        <Table.Content
+          aria-label="Proposals"
+          className="min-w-[640px]"
+          onRowAction={(key) => {
+            const proposal = proposals.find((p) => p.id === key);
+            if (proposal) onSelect(proposal);
+          }}
+        >
+          <Table.Header>
+            <Table.Column isRowHeader>Creator</Table.Column>
+            <Table.Column className="text-end">Followers</Table.Column>
+            <Table.Column className="hidden text-end sm:table-cell">
               Engagement
-            </th>
-            <th className="hidden px-4 py-2.5 text-center font-medium md:table-cell">
+            </Table.Column>
+            <Table.Column className="hidden text-center md:table-cell">
               Deliverables
-            </th>
-            <th className="px-4 py-2.5 text-right font-medium">Payout</th>
-            <th className="px-4 py-2.5 text-left font-medium">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {proposals.map((proposal) => (
-            <tr
-              key={proposal.id}
-              onClick={() => onSelect(proposal)}
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  onSelect(proposal);
-                }
-              }}
-              className="cursor-pointer border-b border-border outline-none transition-colors last:border-0 hover:bg-surface-muted focus-visible:bg-surface-muted"
-            >
-              <td className="px-4 py-3">
-                <div className="font-medium text-foreground">
-                  @{proposal.creatorHandle}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {proposal.creatorName ?? proposal.creatorEmail}
-                </div>
-              </td>
-              <td className="tabular-nums px-4 py-3 text-right text-foreground">
-                {formatCompactNumber(proposal.followerCount)}
-              </td>
-              <td className="tabular-nums hidden px-4 py-3 text-right text-foreground sm:table-cell">
-                {formatEngagementRate(proposal.engagementRate)}
-              </td>
-              <td className="tabular-nums hidden px-4 py-3 text-center text-muted-foreground md:table-cell">
-                {proposal.reelsCount}R · {proposal.storiesCount}S
-              </td>
-              <td className="tabular-nums px-4 py-3 text-right font-medium text-foreground">
-                {formatCents(proposal.calculatedPayoutCents)}
-              </td>
-              <td className="px-4 py-3">
-                <StatusBadge status={proposal.workflowStatus} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+            </Table.Column>
+            <Table.Column className="text-end">Payout</Table.Column>
+            <Table.Column>Status</Table.Column>
+          </Table.Header>
+          <Table.Body>
+            {proposals.map((proposal) => (
+              <Table.Row key={proposal.id} id={proposal.id}>
+                <Table.Cell>
+                  <div className="flex items-center gap-1.5 font-medium text-foreground">
+                    @{proposal.creatorHandle}
+                    {proposal.source === "INSTAGRAM_DM" ? (
+                      <span
+                        title="Via Instagram DM"
+                        className="rounded bg-surface-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+                      >
+                        DM
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {proposal.creatorName ??
+                      proposal.creatorEmail ??
+                      "Instagram DM"}
+                  </div>
+                </Table.Cell>
+                <Table.Cell className="tabular-nums text-end text-foreground">
+                  {formatCompactNumber(proposal.followerCount)}
+                </Table.Cell>
+                <Table.Cell className="tabular-nums hidden text-end text-foreground sm:table-cell">
+                  {formatEngagementRate(proposal.engagementRate)}
+                </Table.Cell>
+                <Table.Cell className="tabular-nums hidden text-center text-muted-foreground md:table-cell">
+                  {proposal.reelsCount}R · {proposal.storiesCount}S
+                </Table.Cell>
+                <Table.Cell className="tabular-nums text-end font-medium text-foreground">
+                  {formatCents(proposal.calculatedPayoutCents)}
+                </Table.Cell>
+                <Table.Cell>
+                  <StatusBadge status={proposal.workflowStatus} />
+                </Table.Cell>
+              </Table.Row>
+            ))}
+          </Table.Body>
+        </Table.Content>
+      </Table.ScrollContainer>
+    </Table>
   );
 }

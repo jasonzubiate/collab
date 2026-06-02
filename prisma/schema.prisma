@@ -18,14 +18,16 @@ model User {
 }
 
 model Brand {
-  id                  String     @id @default(uuid())
-  companyName         String
-  slug                String     @unique
-  instagramBusinessId String?    @unique
-  users               User[]
-  campaigns           Campaign[]
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @updatedAt
+  id                     String                  @id @default(uuid())
+  companyName            String
+  slug                   String                  @unique
+  instagramBusinessId    String?                 @unique
+  users                  User[]
+  campaigns              Campaign[]
+  instagramConnection    InstagramConnection?
+  instagramConversations InstagramConversation[]
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
 }
 
 model Campaign {
@@ -45,10 +47,11 @@ model Campaign {
   adUsage30DayMultiplier Decimal @db.Decimal(5, 2)
   adUsage90DayMultiplier Decimal @db.Decimal(5, 2)
 
-  proposalDrafts ProposalDraft[]
-  proposals      Proposal[]
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  proposalDrafts         ProposalDraft[]
+  proposals              Proposal[]
+  instagramConversations InstagramConversation[]
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
 
   @@unique([brandId, slug])
 }
@@ -60,12 +63,14 @@ model ProposalDraft {
 
   creatorHandle String
   creatorName   String?
-  creatorEmail  String
+  creatorEmail  String?
 
   followerCount      Int
   engagementRate     Decimal @db.Decimal(5, 2)
   enrichmentProvider String  @default("mock")
   enrichmentPayload  Json?
+
+  source ProposalSource @default(WEB)
 
   expiresAt DateTime
   createdAt DateTime @default(now())
@@ -78,7 +83,7 @@ model Proposal {
 
   creatorHandle String
   creatorName   String?
-  creatorEmail  String
+  creatorEmail  String?
 
   followerCount      Int
   engagementRate     Decimal @db.Decimal(5, 2)
@@ -93,14 +98,18 @@ model Proposal {
   matchTier             MatchTier
   workflowStatus        WorkflowStatus @default(NEW)
 
+  source                ProposalSource @default(WEB)
+  instagramScopedUserId String?
+
   contactedAt DateTime?
   approvedAt  DateTime?
   rejectedAt  DateTime?
   adminNotes  String?
 
-  events    ProposalEvent[]
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  events                ProposalEvent[]
+  instagramConversation InstagramConversation?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
 }
 
 model ProposalEvent {
@@ -133,4 +142,60 @@ enum ProposalEventType {
   STATUS_CHANGED
   EMAIL_OPENED
   EXPORTED
+  DM_SENT
+  DM_RECEIVED
+  INSTAGRAM_REPLY
+  CONVERSATION_STARTED
+}
+
+enum ProposalSource {
+  WEB
+  INSTAGRAM_DM
+}
+
+/// One Instagram Professional account per brand (Instagram-Login API path).
+model InstagramConnection {
+  id      String @id @default(uuid())
+  brandId String @unique
+  brand   Brand  @relation(fields: [brandId], references: [id])
+
+  igUserId       String  @unique
+  igUsername     String?
+  accessTokenEnc String // AES-256-GCM ciphertext; never logged
+
+  tokenExpiresAt    DateTime?
+  webhookSubscribed Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// DM conversation state, one row per (brand, IG sender, campaign).
+model InstagramConversation {
+  id                    String @id @default(uuid())
+  brandId               String
+  brand                 Brand  @relation(fields: [brandId], references: [id])
+  campaignId            String
+  campaign              Campaign @relation(fields: [campaignId], references: [id])
+  instagramScopedUserId String
+
+  state        String // InstagramConversationState in the app layer
+  draftMetrics Json? // { followerCount, engagementRate } snapshot
+  draftScope   Json? // { reelsCount, storiesCount, adUsageDays }
+  draftId      String? // FK-by-id to a reused ProposalDraft row
+
+  // Optimistic-concurrency guard: transitions do a conditional update on version.
+  version Int @default(0)
+
+  lastInboundAt  DateTime
+  lastOutboundAt DateTime?
+  expiresAt      DateTime?
+
+  proposalId String?   @unique
+  proposal   Proposal? @relation(fields: [proposalId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([brandId, instagramScopedUserId, campaignId])
 }

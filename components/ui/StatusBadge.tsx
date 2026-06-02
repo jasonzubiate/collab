@@ -1,12 +1,14 @@
-import { cn } from "@/lib/cn";
+import { Chip } from "@heroui/react";
 
 type MatchTier = "GREEN" | "YELLOW" | "ARCHIVED";
 type WorkflowStatus = "NEW" | "CONTACTED" | "APPROVED" | "REJECTED";
 
-const tierStyles: Record<MatchTier, string> = {
-  GREEN: "bg-tier-green-soft text-tier-green",
-  YELLOW: "bg-tier-yellow-soft text-tier-yellow",
-  ARCHIVED: "bg-tier-archived-soft text-tier-archived",
+type ChipColor = "default" | "accent" | "success" | "warning" | "danger";
+
+const tierColors: Record<MatchTier, ChipColor> = {
+  GREEN: "success",
+  YELLOW: "warning",
+  ARCHIVED: "default",
 };
 
 const tierLabels: Record<MatchTier, string> = {
@@ -15,11 +17,11 @@ const tierLabels: Record<MatchTier, string> = {
   ARCHIVED: "Archived",
 };
 
-const statusStyles: Record<WorkflowStatus, string> = {
-  NEW: "bg-surface-muted text-muted-foreground ring-1 ring-border-strong",
-  CONTACTED: "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200",
-  APPROVED: "bg-tier-green-soft text-tier-green",
-  REJECTED: "bg-danger-soft text-danger",
+const statusColors: Record<WorkflowStatus, ChipColor> = {
+  NEW: "default",
+  CONTACTED: "accent",
+  APPROVED: "success",
+  REJECTED: "danger",
 };
 
 const statusLabels: Record<WorkflowStatus, string> = {
@@ -29,21 +31,33 @@ const statusLabels: Record<WorkflowStatus, string> = {
   REJECTED: "Rejected",
 };
 
-const base =
-  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium";
-
 export function TierBadge({ tier }: { tier: MatchTier }) {
   return (
-    <span className={cn(base, tierStyles[tier])}>
+    <Chip color={tierColors[tier]} variant="soft" size="sm">
       <span
         aria-hidden
-        className="h-1.5 w-1.5 rounded-full bg-current opacity-80"
+        className="size-1.5 rounded-full bg-current opacity-80"
       />
-      {tierLabels[tier]}
-    </span>
+      <Chip.Label>{tierLabels[tier]}</Chip.Label>
+    </Chip>
   );
 }
 
 export function StatusBadge({ status }: { status: WorkflowStatus }) {
-  return <span className={cn(base, statusStyles[status])}>{statusLabels[status]}</span>;
+  return (
+    <Chip color={statusColors[status]} variant="soft" size="sm">
+      {statusLabels[status]}
+    </Chip>
+  );
+}
+
+type ProposalSource = "WEB" | "INSTAGRAM_DM";
+
+export function SourceBadge({ source }: { source: ProposalSource }) {
+  if (source !== "INSTAGRAM_DM") return null;
+  return (
+    <Chip color="accent" variant="soft" size="sm">
+      <Chip.Label>Via Instagram DM</Chip.Label>
+    </Chip>
+  );
 }

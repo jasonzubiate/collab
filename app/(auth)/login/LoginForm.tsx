@@ -1,13 +1,11 @@
 "use client";
 
 import { useActionState } from "react";
+import { Input } from "@heroui/react";
 import { authenticate, type LoginState } from "@/app/actions/auth";
 import { Button } from "@/components/ui/Button";
 
 const initialState: LoginState = {};
-
-const inputClass =
-  "w-full rounded-lg border border-border bg-surface px-3.5 py-3 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/40";
 
 export function LoginForm() {
   const [state, formAction, pending] = useActionState(
@@ -24,7 +22,7 @@ export function LoginForm() {
         >
           Email
         </label>
-        <input
+        <Input
           id="email"
           name="email"
           type="email"
@@ -32,7 +30,7 @@ export function LoginForm() {
           autoCapitalize="none"
           required
           placeholder="admin@example.com"
-          className={inputClass}
+          fullWidth
         />
       </div>
 
@@ -43,14 +41,14 @@ export function LoginForm() {
         >
           Password
         </label>
-        <input
+        <Input
           id="password"
           name="password"
           type="password"
           autoComplete="current-password"
           required
           placeholder="••••••••"
-          className={inputClass}
+          fullWidth
         />
       </div>
 

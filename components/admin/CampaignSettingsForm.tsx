@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Input } from "@heroui/react";
 import { Button } from "@/components/ui/Button";
 import { dollarsToCents } from "@/lib/money";
 import type { AdminCampaign } from "@/lib/adminTypes";
@@ -18,9 +19,6 @@ function slugify(value: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
-
-const inputClass =
-  "w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-foreground outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/40";
 
 export function CampaignSettingsForm({ campaign, onSaved, onCancel }: Props) {
   const isEdit = Boolean(campaign);
@@ -114,22 +112,24 @@ export function CampaignSettingsForm({ campaign, onSaved, onCancel }: Props) {
 
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField label="Name" errors={errors.name}>
-          <input
+          <Input
             value={name}
             onChange={(e) => handleNameChange(e.target.value)}
-            className={inputClass}
             placeholder="Summer Creator Collabs"
+            fullWidth
+            variant="secondary"
           />
         </FormField>
         <FormField label="Public slug" errors={errors.slug} hint="/apply/<brand>">
-          <input
+          <Input
             value={slug}
             onChange={(e) => {
               setSlug(e.target.value);
               setSlugDirty(true);
             }}
-            className={inputClass}
             placeholder="summer-creator-collabs"
+            fullWidth
+            variant="secondary"
           />
         </FormField>
 
@@ -137,25 +137,27 @@ export function CampaignSettingsForm({ campaign, onSaved, onCancel }: Props) {
           label="Min followers"
           errors={errors.minFollowers}
         >
-          <input
+          <Input
             type="number"
             min={0}
             value={minFollowers}
             onChange={(e) => setMinFollowers(e.target.value)}
-            className={inputClass}
+            fullWidth
+            variant="secondary"
           />
         </FormField>
         <FormField
           label="Min engagement rate (%)"
           errors={errors.minEngagementRate}
         >
-          <input
+          <Input
             type="number"
             min={0}
             step="0.1"
             value={minEngagementRate}
             onChange={(e) => setMinEngagementRate(e.target.value)}
-            className={inputClass}
+            fullWidth
+            variant="secondary"
           />
         </FormField>
 
@@ -163,36 +165,39 @@ export function CampaignSettingsForm({ campaign, onSaved, onCancel }: Props) {
           label="Base rate / 10k followers ($)"
           errors={errors.baseRatePer10kCents}
         >
-          <input
+          <Input
             type="number"
             min={0}
             step="0.01"
             value={baseRate}
             onChange={(e) => setBaseRate(e.target.value)}
-            className={inputClass}
+            fullWidth
+            variant="secondary"
           />
         </FormField>
         <FormField label="Rate per reel ($)" errors={errors.ratePerReelCents}>
-          <input
+          <Input
             type="number"
             min={0}
             step="0.01"
             value={reelRate}
             onChange={(e) => setReelRate(e.target.value)}
-            className={inputClass}
+            fullWidth
+            variant="secondary"
           />
         </FormField>
         <FormField
           label="Rate per story ($)"
           errors={errors.ratePerStoryCents}
         >
-          <input
+          <Input
             type="number"
             min={0}
             step="0.01"
             value={storyRate}
             onChange={(e) => setStoryRate(e.target.value)}
-            className={inputClass}
+            fullWidth
+            variant="secondary"
           />
         </FormField>
         <div />
@@ -201,26 +206,28 @@ export function CampaignSettingsForm({ campaign, onSaved, onCancel }: Props) {
           label="30-day usage multiplier"
           errors={errors.adUsage30DayMultiplier}
         >
-          <input
+          <Input
             type="number"
             min={1}
             step="0.05"
             value={mult30}
             onChange={(e) => setMult30(e.target.value)}
-            className={inputClass}
+            fullWidth
+            variant="secondary"
           />
         </FormField>
         <FormField
           label="90-day usage multiplier"
           errors={errors.adUsage90DayMultiplier}
         >
-          <input
+          <Input
             type="number"
             min={1}
             step="0.05"
             value={mult90}
             onChange={(e) => setMult90(e.target.value)}
-            className={inputClass}
+            fullWidth
+            variant="secondary"
           />
         </FormField>
       </div>

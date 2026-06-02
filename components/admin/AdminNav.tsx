@@ -8,6 +8,7 @@ import { signOutAction } from "@/app/actions/auth";
 const links = [
   { href: "/admin/proposals", label: "Proposals" },
   { href: "/admin/campaigns", label: "Campaigns" },
+  { href: "/admin/settings/instagram", label: "Settings" },
 ];
 
 export function AdminNav({

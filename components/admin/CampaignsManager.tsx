@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Chip } from "@heroui/react";
 import { Button } from "@/components/ui/Button";
 import { CampaignSettingsForm } from "./CampaignSettingsForm";
 import { formatCents } from "@/lib/money";
@@ -98,10 +99,13 @@ export function CampaignsManager({
                       {campaign.name}
                     </h3>
                     {campaign.isActive ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-tier-green-soft px-2.5 py-0.5 text-xs font-medium text-tier-green">
-                        <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                        Active
-                      </span>
+                      <Chip color="success" variant="soft" size="sm">
+                        <span
+                          aria-hidden
+                          className="size-1.5 rounded-full bg-current"
+                        />
+                        <Chip.Label>Active</Chip.Label>
+                      </Chip>
                     ) : null}
                   </div>
                   <p className="mt-0.5 font-mono text-xs text-muted-foreground">

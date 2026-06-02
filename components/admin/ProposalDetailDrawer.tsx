@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { StatusBadge, TierBadge } from "@/components/ui/StatusBadge";
+import { SourceBadge, StatusBadge, TierBadge } from "@/components/ui/StatusBadge";
 import { ProposalActionMenu } from "./ProposalActionMenu";
 import {
   formatCents,
@@ -68,11 +68,13 @@ export function ProposalDetailDrawer({
                   @{proposal.creatorHandle}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {proposal.creatorName ?? "—"} · {proposal.creatorEmail}
+                  {proposal.creatorName ?? "—"} ·{" "}
+                  {proposal.creatorEmail ?? "Instagram DM"}
                 </p>
-                <div className="mt-2 flex gap-2">
+                <div className="mt-2 flex flex-wrap gap-2">
                   <TierBadge tier={proposal.matchTier} />
                   <StatusBadge status={proposal.workflowStatus} />
+                  <SourceBadge source={proposal.source} />
                 </div>
               </div>
               <button
@@ -111,6 +113,12 @@ export function ProposalDetailDrawer({
                   value={usageLabel(proposal.adUsageDays)}
                 />
                 <Detail label="Campaign" value={proposal.campaign.name} />
+                {proposal.instagramScopedUserId ? (
+                  <Detail
+                    label="Instagram user ID"
+                    value={proposal.instagramScopedUserId}
+                  />
+                ) : null}
                 <Detail
                   label="Submitted"
                   value={formatDate(proposal.createdAt)}

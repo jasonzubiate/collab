@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
+import { Input, InputGroup } from "@heroui/react";
 import { Button } from "@/components/ui/Button";
 import { DeliverableSlider } from "./DeliverableSlider";
 import { UsageRightsSelector } from "./UsageRightsSelector";
@@ -349,9 +350,6 @@ function Field({
   );
 }
 
-const inputClass =
-  "w-full rounded-lg border border-border bg-surface px-3.5 py-3 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/40";
-
 function HandleStep({
   handle,
   name,
@@ -386,38 +384,37 @@ function HandleStep({
       </p>
 
       <Field label="Instagram handle" error={errors.handle}>
-        <div className="flex items-center rounded-lg border border-border bg-surface focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/40">
-          <span className="pl-3.5 text-muted-foreground">@</span>
-          <input
+        <InputGroup fullWidth>
+          <InputGroup.Prefix>@</InputGroup.Prefix>
+          <InputGroup.Input
             value={handle}
             onChange={(e) => onHandle(e.target.value)}
             placeholder="yourhandle"
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
-            className="w-full bg-transparent px-2 py-3 text-foreground outline-none placeholder:text-muted-foreground"
           />
-        </div>
+        </InputGroup>
       </Field>
 
       <Field label="Name" error={errors.name}>
-        <input
+        <Input
           value={name}
           onChange={(e) => onName(e.target.value)}
           placeholder="Optional"
-          className={inputClass}
+          fullWidth
         />
       </Field>
 
       <Field label="Email" error={errors.email}>
-        <input
+        <Input
           value={email}
           onChange={(e) => onEmail(e.target.value)}
           type="email"
           inputMode="email"
           autoCapitalize="none"
           placeholder="you@example.com"
-          className={inputClass}
+          fullWidth
         />
       </Field>
 

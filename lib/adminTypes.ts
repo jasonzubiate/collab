@@ -1,5 +1,6 @@
 export type MatchTier = "GREEN" | "YELLOW" | "ARCHIVED";
 export type WorkflowStatus = "NEW" | "CONTACTED" | "APPROVED" | "REJECTED";
+export type ProposalSource = "WEB" | "INSTAGRAM_DM";
 
 export type ProposalEventView = {
   id: string;
@@ -11,9 +12,11 @@ export type ProposalEventView = {
 export type AdminProposal = {
   id: string;
   campaign: { id: string; name: string };
+  source: ProposalSource;
+  instagramScopedUserId: string | null;
   creatorHandle: string;
   creatorName: string | null;
-  creatorEmail: string;
+  creatorEmail: string | null;
   followerCount: number;
   engagementRate: number;
   reelsCount: number;

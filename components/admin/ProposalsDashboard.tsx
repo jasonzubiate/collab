@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { cn } from "@/lib/cn";
+import { Label, ListBox, SearchField, Select, Tabs } from "@heroui/react";
+import { getLocalTimeZone, type DateValue } from "@internationalized/date";
 import { Button } from "@/components/ui/Button";
+import { DatePickerField } from "@/components/ui/DatePickerField";
 import { ProposalTable } from "./ProposalTable";
 import { ProposalDetailDrawer } from "./ProposalDetailDrawer";
 import type {
@@ -36,8 +38,8 @@ export function ProposalsDashboard({
   const [campaignId, setCampaignId] = useState<string>("");
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+  const [from, setFrom] = useState<DateValue | null>(null);
+  const [to, setTo] = useState<DateValue | null>(null);
 
   const [proposals, setProposals] = useState<AdminProposal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,8 +56,8 @@ export function ProposalsDashboard({
     if (status !== "ALL") params.set("workflowStatus", status);
     if (campaignId) params.set("campaignId", campaignId);
     if (debouncedQuery) params.set("q", debouncedQuery);
-    if (from) params.set("from", new Date(from).toISOString());
-    if (to) params.set("to", new Date(to).toISOString());
+    if (from) params.set("from", from.toDate(getLocalTimeZone()).toISOString());
+    if (to) params.set("to", to.toDate(getLocalTimeZone()).toISOString());
     return params;
   }, [tier, status, campaignId, debouncedQuery, from, to]);
 
@@ -107,97 +109,114 @@ export function ProposalsDashboard({
         </Button>
       </div>
 
-      <div className="mb-4 flex gap-1 border-b border-border">
-        {TIER_TABS.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => setTier(tab.value)}
-            className={cn(
-              "-mb-px border-b-2 px-3 py-2 text-sm font-medium transition-colors",
-              tier === tab.value
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        className="mb-4 md:max-w-xs"
+        variant="primary"
+        selectedKey={tier}
+        onSelectionChange={(key) => setTier(key as MatchTier)}
+      >
+        <Tabs.ListContainer>
+          <Tabs.List aria-label="Match tier">
+            {TIER_TABS.map((tab) => (
+              <Tabs.Tab key={tab.value} id={tab.value}>
+                {tab.label}
+                <Tabs.Indicator />
+              </Tabs.Tab>
+            ))}
+          </Tabs.List>
+        </Tabs.ListContainer>
+      </Tabs>
 
       <div className="mb-4 flex flex-wrap items-end gap-3">
-        <div className="min-w-[180px] flex-1">
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">
+        <SearchField
+          aria-label="Search proposals"
+          className="min-w-[180px] flex-1"
+          value={query}
+          onChange={setQuery}
+          variant="secondary"
+        >
+          <Label className="mb-1 block text-xs font-medium text-muted-foreground">
             Search
-          </label>
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Handle, name, or email"
-            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/40"
-          />
-        </div>
+          </Label>
+          <SearchField.Group>
+            <SearchField.SearchIcon />
+            <SearchField.Input placeholder="Handle, name, or email" />
+            <SearchField.ClearButton />
+          </SearchField.Group>
+        </SearchField>
 
-        <div>
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">
+        <Select
+          aria-label="Status"
+          className="w-48"
+          variant="secondary"
+          value={status}
+          onChange={(key) => setStatus((key as WorkflowStatus | "ALL") ?? "ALL")}
+        >
+          <Label className="mb-1 block text-xs font-medium text-muted-foreground">
             Status
-          </label>
-          <select
-            value={status}
-            onChange={(e) =>
-              setStatus(e.target.value as WorkflowStatus | "ALL")
-            }
-            className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/40"
-          >
-            {STATUS_FILTERS.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
-              </option>
-            ))}
-          </select>
-        </div>
+          </Label>
+          <Select.Trigger>
+            <Select.Value />
+            <Select.Indicator />
+          </Select.Trigger>
+          <Select.Popover>
+            <ListBox>
+              {STATUS_FILTERS.map((s) => (
+                <ListBox.Item key={s.value} id={s.value} textValue={s.label}>
+                  {s.label}
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+              ))}
+            </ListBox>
+          </Select.Popover>
+        </Select>
 
         {campaigns.length > 1 ? (
-          <div>
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">
+          <Select
+            aria-label="Campaign"
+            className="w-48"
+            variant="secondary"
+            value={campaignId || "ALL"}
+            onChange={(key) =>
+              setCampaignId(key === "ALL" ? "" : String(key ?? ""))
+            }
+          >
+            <Label className="mb-1 block text-xs font-medium text-muted-foreground">
               Campaign
-            </label>
-            <select
-              value={campaignId}
-              onChange={(e) => setCampaignId(e.target.value)}
-              className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/40"
-            >
-              <option value="">All campaigns</option>
-              {campaigns.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
+            </Label>
+            <Select.Trigger>
+              <Select.Value />
+              <Select.Indicator />
+            </Select.Trigger>
+            <Select.Popover>
+              <ListBox>
+                <ListBox.Item id="ALL" textValue="All campaigns">
+                  All campaigns
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+                {campaigns.map((c) => (
+                  <ListBox.Item key={c.id} id={c.id} textValue={c.name}>
+                    {c.name}
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                ))}
+              </ListBox>
+            </Select.Popover>
+          </Select>
         ) : null}
 
-        <div>
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">
-            From
-          </label>
-          <input
-            type="date"
-            value={from}
-            onChange={(e) => setFrom(e.target.value)}
-            className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/40"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">
-            To
-          </label>
-          <input
-            type="date"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-            className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/40"
-          />
-        </div>
+        <DatePickerField
+          label="From"
+          className="w-48"
+          value={from}
+          onChange={setFrom}
+        />
+        <DatePickerField
+          label="To"
+          className="w-48"
+          value={to}
+          onChange={setTo}
+        />
       </div>
 
       <ProposalTable

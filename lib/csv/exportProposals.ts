@@ -5,9 +5,14 @@ const COLUMNS: { header: string; value: (p: SerializedProposal) => string }[] =
   [
     { header: "Proposal ID", value: (p) => p.id },
     { header: "Campaign", value: (p) => p.campaign.name },
+    { header: "Source", value: (p) => p.source },
+    {
+      header: "Instagram User ID",
+      value: (p) => p.instagramScopedUserId ?? "",
+    },
     { header: "Handle", value: (p) => p.creatorHandle },
     { header: "Name", value: (p) => p.creatorName ?? "" },
-    { header: "Email", value: (p) => p.creatorEmail },
+    { header: "Email", value: (p) => p.creatorEmail ?? "" },
     { header: "Followers", value: (p) => String(p.followerCount) },
     {
       header: "Engagement Rate (%)",

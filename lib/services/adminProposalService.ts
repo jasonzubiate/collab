@@ -1,5 +1,9 @@
 import type { Prisma, Proposal, ProposalEvent } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import {
+  isWithinMessagingWindow,
+  sendDm,
+} from "@/lib/instagram/messagingService";
 import { decToNum } from "./campaignService";
 import type {
   ProposalFilters,
@@ -16,6 +20,8 @@ export function serializeProposal(
   return {
     id: proposal.id,
     campaign: proposal.campaign,
+    source: proposal.source,
+    instagramScopedUserId: proposal.instagramScopedUserId,
     creatorHandle: proposal.creatorHandle,
     creatorName: proposal.creatorName,
     creatorEmail: proposal.creatorEmail,
@@ -205,6 +211,7 @@ export async function buildEmailIntent(brandId: string, proposalId: string) {
     include: { campaign: { select: { id: true, name: true } } },
   });
   if (!proposal) return { error: "NOT_FOUND" } as const;
+  if (!proposal.creatorEmail) return { error: "NO_EMAIL" } as const;
 
   const subject = `Collab opportunity: ${proposal.campaign.name}`;
   const body = `Hi ${proposal.creatorName ?? proposal.creatorHandle},\n\nThanks for your interest in ${proposal.campaign.name}. We'd love to chat about working together.\n`;
@@ -217,4 +224,65 @@ export async function buildEmailIntent(brandId: string, proposalId: string) {
   });
 
   return { mailto, creatorEmail: proposal.creatorEmail };
+}
+
+export type SendInstagramReplyResult =
+  | { ok: true }
+  | {
+      ok: false;
+      reason: "NOT_FOUND" | "NO_IGSID" | "WINDOW_CLOSED" | "SEND_FAILED";
+      message: string;
+    };
+
+/** Send an admin-composed DM to the proposal's creator via Instagram. */
+export async function sendInstagramReply(
+  brandId: string,
+  proposalId: string,
+  text: string,
+): Promise<SendInstagramReplyResult> {
+  const proposal = await prisma.proposal.findFirst({
+    where: { id: proposalId, campaign: { brandId } },
+    select: { id: true, instagramScopedUserId: true },
+  });
+  if (!proposal) {
+    return { ok: false, reason: "NOT_FOUND", message: "Proposal not found." };
+  }
+  if (!proposal.instagramScopedUserId) {
+    return {
+      ok: false,
+      reason: "NO_IGSID",
+      message: "This proposal has no Instagram contact.",
+    };
+  }
+
+  // Enforce Meta's 24h standard messaging window using the conversation's last
+  // inbound timestamp (PRD section 11). Outside the window, sends are blocked.
+  const conversation = await prisma.instagramConversation.findFirst({
+    where: { brandId, instagramScopedUserId: proposal.instagramScopedUserId },
+    orderBy: { lastInboundAt: "desc" },
+    select: { lastInboundAt: true },
+  });
+  if (!isWithinMessagingWindow(conversation?.lastInboundAt ?? null)) {
+    return {
+      ok: false,
+      reason: "WINDOW_CLOSED",
+      message:
+        "The 24-hour messaging window has closed. The creator must message again first.",
+    };
+  }
+
+  const result = await sendDm(brandId, proposal.instagramScopedUserId, text);
+  if (!result.ok) {
+    return { ok: false, reason: "SEND_FAILED", message: result.error };
+  }
+
+  await prisma.proposalEvent.create({
+    data: {
+      proposalId,
+      type: "INSTAGRAM_REPLY",
+      metadata: { messageId: result.messageId },
+    },
+  });
+
+  return { ok: true };
 }
