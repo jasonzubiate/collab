@@ -59,7 +59,7 @@ npm run db:seed         # brand, admin, active campaign, sample proposals
 npm run dev
 ```
 
-- Admin: http://localhost:3000/admin (login `admin@example.com` / `password123`)
+- Admin: http://localhost:3000/admin (signin `admin@example.com` / `password123`)
 - Creator intake: http://localhost:3000/apply/example-studio
 
 ## Scripts
@@ -79,7 +79,11 @@ npm run dev
 ```
 app/
   (public)/apply/[brandSlug]/   Public creator intake
-  (auth)/login/                 Admin sign-in
+  (auth)/brand/signin/           Brand signin
+  (auth)/brand/signup/           Brand signup
+  (auth)/creator/signin/         Creator signin
+  (auth)/creator/signup/         Creator signup
+  (auth)/login/                  Legacy redirect to brand signin
   admin/                        Authenticated dashboard (proposals, campaigns)
   api/public/                   Intake routes (start, estimate, submit)
   api/admin/                    Campaign + proposal admin routes

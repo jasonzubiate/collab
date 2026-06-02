@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { signinPath } from "@/lib/auth/dashboardPath";
 import { getStatus } from "@/lib/services/instagramConnectionService";
 import { InstagramConnectionPanel } from "@/components/admin/InstagramConnectionPanel";
 
@@ -9,7 +10,7 @@ export default async function InstagramSettingsPage({
   searchParams: Promise<{ connected?: string; error?: string }>;
 }) {
   const session = await auth();
-  if (!session?.user?.brandId) redirect("/login");
+  if (!session?.user?.brandId) redirect(signinPath("BRAND"));
 
   const status = await getStatus(session.user.brandId);
   const { connected, error } = await searchParams;

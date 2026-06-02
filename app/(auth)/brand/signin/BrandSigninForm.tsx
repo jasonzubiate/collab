@@ -1,15 +1,16 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import { Input } from "@heroui/react";
-import { authenticate, type LoginState } from "@/app/actions/auth";
+import { authenticateBrand, type AuthFormState } from "@/app/actions/auth";
 import { Button } from "@/components/ui/Button";
 
-const initialState: LoginState = {};
+const initialState: AuthFormState = {};
 
-export function LoginForm() {
+export function BrandSigninForm() {
   const [state, formAction, pending] = useActionState(
-    authenticate,
+    authenticateBrand,
     initialState,
   );
 
@@ -29,7 +30,7 @@ export function LoginForm() {
           autoComplete="email"
           autoCapitalize="none"
           required
-          placeholder="admin@example.com"
+          placeholder="you@brand.com"
           fullWidth
         />
       </div>
@@ -59,8 +60,15 @@ export function LoginForm() {
       ) : null}
 
       <Button type="submit" size="lg" className="w-full" disabled={pending}>
-        {pending ? "Signing in…" : "Sign in"}
+        {pending ? "Signing in…" : "Signin"}
       </Button>
+
+      <p className="text-center text-sm text-muted-foreground">
+        New brand?{" "}
+        <Link href="/brand/signup" className="font-medium text-primary">
+          Signup
+        </Link>
+      </p>
     </form>
   );
 }

@@ -41,12 +41,34 @@ export type AdminContext = {
  */
 export async function requireAdmin(): Promise<AdminContext | Response> {
   const session = await auth();
-  if (!session?.user?.id || !session.user.brandId) {
+  if (
+    !session?.user?.id ||
+    session.user.userType !== "BRAND" ||
+    !session.user.brandId
+  ) {
     return jsonError("Unauthorized", 401);
   }
   return {
     userId: session.user.id,
     brandId: session.user.brandId,
     email: session.user.email ?? "",
+  };
+}
+
+export type CreatorContext = {
+  userId: string;
+  email: string;
+  creatorProfileId?: string;
+};
+
+export async function requireCreator(): Promise<CreatorContext | Response> {
+  const session = await auth();
+  if (!session?.user?.id || session.user.userType !== "CREATOR") {
+    return jsonError("Unauthorized", 401);
+  }
+  return {
+    userId: session.user.id,
+    email: session.user.email ?? "",
+    creatorProfileId: session.user.creatorProfileId,
   };
 }

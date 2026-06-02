@@ -11,8 +11,10 @@ type Editing = { mode: "create" } | { mode: "edit"; campaign: AdminCampaign };
 
 export function CampaignsManager({
   initialCampaigns,
+  showOnboarding = false,
 }: {
   initialCampaigns: AdminCampaign[];
+  showOnboarding?: boolean;
 }) {
   const [campaigns, setCampaigns] = useState(initialCampaigns);
   const [editing, setEditing] = useState<Editing | null>(null);
@@ -80,10 +82,25 @@ export function CampaignsManager({
 
       {campaigns.length === 0 && !editing ? (
         <div className="rounded-xl border border-dashed border-border bg-surface px-6 py-16 text-center">
-          <p className="text-sm font-medium text-foreground">No campaigns yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Create your first campaign to start collecting proposals.
+          <p className="text-sm font-medium text-foreground">
+            {showOnboarding
+              ? "Welcome — create your first campaign"
+              : "No campaigns yet"}
           </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {showOnboarding
+              ? "Set pricing rules and your public intake link so creators can submit proposals."
+              : "Create your first campaign to start collecting proposals."}
+          </p>
+          {!editing ? (
+            <Button
+              size="md"
+              className="mt-6"
+              onClick={() => setEditing({ mode: "create" })}
+            >
+              Create your first campaign
+            </Button>
+          ) : null}
         </div>
       ) : (
         <div className="space-y-3">

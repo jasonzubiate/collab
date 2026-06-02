@@ -280,7 +280,7 @@ export async function sendInstagramReply(
     data: {
       proposalId,
       type: "INSTAGRAM_REPLY",
-      metadata: { messageId: result.messageId },
+      metadata: { messageId: result.messageId, text },
     },
   });
 

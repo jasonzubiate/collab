@@ -45,16 +45,17 @@ This is not a full influencer CRM. It is a lightweight gatekeeper and pricing as
 - Multi-admin teams or role-based permissions.
 - Real Instagram OAuth or live profile scraping.
 - Automated payout transfer.
-- Creator accounts or creator login.
 - Multi-brand agency workspaces.
 - Automated counter-offer generation.
 - Full email campaign automation.
+
+**Post-MVP (implemented):** Dual entry website, brand self-service signup, creator accounts (Instagram OAuth + email magic link), and creator dashboard for proposal status and brand reply visibility. See §7.8–§7.10.
 
 ## 4. End Users
 
 ### Brand Admin
 
-The brand admin is the only authenticated user in the MVP. They configure campaign requirements and pricing rules, review incoming creator proposals, and take workflow actions.
+The brand admin configures campaign requirements and pricing rules, reviews incoming creator proposals, and takes workflow actions. Brands sign up at `/brand/signup` and signin at `/brand/signin`.
 
 Primary needs:
 
@@ -66,7 +67,7 @@ Primary needs:
 
 ### Creator
 
-The creator is an unauthenticated public user. They visit a campaign intake link, enter their handle and contact details, choose deliverables, view an estimated payout, and submit a proposal.
+Creators can submit proposals without an account via the public intake link (`/apply/[brandSlug]`) or Instagram DMs. Creators who create an account at `/creator/signup` can signin at `/creator/signin` (Instagram OAuth preferred, email magic link fallback) and view linked proposals at `/creator/requests`.
 
 Primary needs:
 
@@ -74,6 +75,7 @@ Primary needs:
 - Build a campaign scope using tactile controls.
 - See an estimated payout before submitting.
 - Complete the request quickly on mobile.
+- **(Account holders)** Track proposal status and brand replies across submissions.
 
 ## 5. Recommended Tech Stack
 
@@ -82,7 +84,7 @@ Primary needs:
 - Animation: Framer Motion
 - Database: PostgreSQL
 - ORM: Prisma
-- Auth: Auth.js / NextAuth for admin login
+- Auth: Auth.js / NextAuth with `UserType` (`BRAND` | `CREATOR`) in JWT session
 - Validation: Zod
 - Forms: React Hook Form where useful
 - Testing: Vitest for unit tests, Playwright for critical flow tests
@@ -94,9 +96,12 @@ Primary needs:
 
 ### Frontend
 
+- Marketing homepage at `/` with separate entry paths for brands and creators.
 - Public creator intake experience under `/apply/[brandSlug]`.
-- Authenticated admin dashboard under `/admin`.
-- Admin login under `/login`.
+- Authenticated brand dashboard under `/admin`.
+- Brand signin and signup under `/brand/signin` and `/brand/signup` (`/login` redirects to brand signin).
+- Creator signin and signup under `/creator/signin` and `/creator/signup`.
+- Creator dashboard under `/creator/requests` and `/creator/settings`.
 - Reusable components for sliders, usage rights selector, proposal table, status tabs, campaign settings, and action menus.
 
 ### Backend
@@ -115,20 +120,47 @@ Primary needs:
 
 ## 7. Core User Flows
 
-### 7.1 Admin Login
+### 7.1 Brand Signin
 
-1. Admin visits `/login`.
-2. Admin enters credentials or uses the configured Auth.js provider.
+1. Brand admin visits `/brand/signin` (legacy `/login` and `/brand/login` redirect here).
+2. Admin enters email and password.
 3. On success, admin is redirected to `/admin/proposals`.
-4. Unauthenticated visits to `/admin/*` redirect to `/login`.
+4. Unauthenticated visits to `/admin/*` redirect to `/brand/signin`.
+5. Authenticated creators attempting `/admin/*` redirect to `/creator/requests`.
 
 Acceptance criteria:
 
-- Admin routes are protected.
-- Public intake routes do not require login.
-- Invalid login attempts return clear errors without exposing sensitive details.
+- Admin routes require `userType === BRAND` and a valid `brandId`.
+- Public intake routes do not require signin.
+- Invalid signin attempts return clear errors without exposing sensitive details.
 
-### 7.2 Campaign Management
+### 7.2 Brand Sign Up
+
+1. Brand visits `/brand/signup` from the marketing homepage.
+2. Brand enters name, work email, password, and company name.
+3. System creates `Brand` + `User` (`userType: BRAND`) in one transaction with a unique slug.
+4. Brand is signed in and redirected to `/admin/campaigns?onboarding=1`.
+
+Acceptance criteria:
+
+- Duplicate emails are rejected.
+- New brands land on campaign onboarding empty state.
+
+### 7.3 Creator Signin / Signup
+
+1. Creator visits `/creator/signin` or `/creator/signup`.
+2. **Primary:** Creator authorizes via Instagram OAuth (`/api/auth/creator/instagram`).
+3. **Fallback:** Creator enters email and receives a magic link (`/api/auth/creator/verify`).
+4. On success, creator is redirected to `/creator/requests`.
+5. System links existing `Proposal` rows by email, Instagram scoped user ID, or normalized handle.
+
+Acceptance criteria:
+
+- Creator routes require `userType === CREATOR`.
+- Authenticated brands attempting `/creator/*` redirect to `/admin/proposals`.
+- Magic links expire after 15 minutes; session handoff tokens expire after 5 minutes.
+
+### 7.4 Campaign Management
 
 1. Admin opens `/admin/campaigns`.
 2. Admin creates or edits campaigns.
@@ -153,7 +185,7 @@ Acceptance criteria:
 - Public intake uses the active campaign.
 - Inactive campaigns are not available for new creator submissions.
 
-### 7.3 Creator Intake and Estimate
+### 7.5 Creator Intake and Estimate
 
 1. Creator visits `/apply/[brandSlug]`.
 2. App loads the brand's active campaign.
@@ -182,7 +214,7 @@ Acceptance criteria:
 - Refreshing or changing scope does not silently change enriched metrics.
 - Mobile layout remains usable and polished.
 
-### 7.4 Proposal Review
+### 7.6 Proposal Review
 
 1. Admin opens `/admin/proposals`.
 2. Admin sees primary match tier tabs:
@@ -628,9 +660,13 @@ Design direction:
 
 ### Admin Pages
 
-#### `/login`
+#### `/brand/signin`
 
-Admin authentication page.
+Brand authentication page. Legacy `/login` redirects here.
+
+#### `/brand/signup`
+
+Brand registration page.
 
 #### `/admin/proposals`
 
