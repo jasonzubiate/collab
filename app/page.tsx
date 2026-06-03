@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { auth } from "@/auth";
+import { LandingNav } from "@/components/marketing/LandingNav";
 import { dashboardPath } from "@/lib/auth/dashboardPath";
 import { cn } from "@/lib/cn";
 
@@ -55,40 +56,9 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-dvh bg-background">
-      <header className="border-b border-border bg-surface/80 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
-          <span className="text-sm font-semibold tracking-tight text-foreground">
-            Collab
-          </span>
-          <nav className="flex items-center gap-4 text-sm">
-            {dashboardHref ? (
-              <Link
-                href={dashboardHref}
-                className="font-medium text-primary hover:text-primary-hover"
-              >
-                Go to dashboard
-              </Link>
-            ) : (
-              <>
-                <Link
-                  href="/brand/signin"
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  Brand signin
-                </Link>
-                <Link
-                  href="/creator/signin"
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  Creator signin
-                </Link>
-              </>
-            )}
-          </nav>
-        </div>
-      </header>
+      <LandingNav dashboardHref={dashboardHref} />
 
-      <main className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-24">
+      <main className="mx-auto max-w-5xl px-4 pt-24 pb-16 sm:px-6 sm:pt-24 sm:pb-24">
         <div className="max-w-2xl">
           <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
             Collaboration intake that works for brands and creators
