@@ -20,7 +20,7 @@ export default async function CreatorSigninPage({
   const params = await searchParams;
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6">
+    <main className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-zinc-100 p-8 shadow-xl shadow-zinc-950/10">
       <div className="mb-8">
         <Link
           href="/"
@@ -46,10 +46,10 @@ export default async function CreatorSigninPage({
 
       <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border" />
+          <div className="w-full border-t border-zinc-200" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">or</span>
+          <span className="bg-zinc-100 px-2 text-muted-foreground">or</span>
         </div>
       </div>
 

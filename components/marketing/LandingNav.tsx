@@ -1,32 +1,5 @@
-"use client";
-
-import { buttonVariants } from "@heroui/react";
 import Image from "next/image";
 import Link from "next/link";
-import { cn } from "@/lib/cn";
-
-const ctaClassName =
-  "!bg-[#17F99A] text-xs font-medium font-mono tracking-wide !text-zinc-900 uppercase hover:!bg-[#14e08c]";
-
-function NavCta({
-  href,
-  children,
-}: {
-  href: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        buttonVariants({ size: "lg", variant: "primary" }),
-        ctaClassName,
-      )}
-    >
-      {children}
-    </Link>
-  );
-}
 
 export function LandingNav({
   dashboardHref,
@@ -34,26 +7,41 @@ export function LandingNav({
   dashboardHref: string | null;
 }) {
   return (
-    <header className="fixed top-4 md:top-6 right-4 left-4 z-50">
-      <div className="mx-auto flex w-full max-w-2xl items-center justify-between rounded-3xl bg-white/70 p-4 backdrop-blur-md sm:px-5">
+    <header className="fixed top-4 right-4 left-4 z-50 md:top-6">
+      <div className="mx-auto flex w-full max-w-5xl items-center justify-between rounded-3xl bg-white/70 p-3 backdrop-blur-md sm:px-5">
         <Link href="/" aria-label="Collab home" className="shrink-0">
           <Image
             src="/collab-full-logo.png"
-            alt=""
+            alt="Collab"
             width={484}
             height={120}
-            className="h-7"
+            className="h-7 w-auto"
             style={{ width: "auto", height: "1.75rem" }}
             priority
           />
         </Link>
 
         {dashboardHref ? (
-          <NavCta href={dashboardHref}>GO TO DASHBOARD</NavCta>
+          <Link
+            href={dashboardHref}
+            className="inline-flex h-11 items-center justify-center rounded-full bg-primary px-5 font-mono text-xs font-medium tracking-wide text-primary-foreground uppercase transition-colors hover:bg-primary-hover"
+          >
+            Go to dashboard
+          </Link>
         ) : (
-          <div className="flex items-center gap-2">
-            <NavCta href="/brand/signin">BRAND SIGN IN</NavCta>
-            <NavCta href="/creator/signin">CREATOR SIGN IN</NavCta>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              href="/creator/signin"
+              className="inline-flex h-11 items-center justify-center rounded-full bg-surface px-5 font-mono text-xs font-medium tracking-wide text-foreground uppercase ring-1 ring-border-strong transition-colors hover:bg-surface-muted"
+            >
+              Creator sign in
+            </Link>
+            <Link
+              href="/brand/signin"
+              className="inline-flex h-11 items-center justify-center rounded-full bg-primary px-5 font-mono text-xs font-medium tracking-wide text-primary-foreground uppercase transition-colors hover:bg-primary-hover"
+            >
+              Brand sign in
+            </Link>
           </div>
         )}
       </div>

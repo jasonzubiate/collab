@@ -9,10 +9,10 @@
   --muted-foreground: #71717a;
   --border: #e4e4e7;
   --border-strong: #d4d4d8;
-  --primary: #4f46e5;
-  --primary-hover: #4338ca;
-  --primary-foreground: #ffffff;
-  --ring: #6366f1;
+  --primary: #ddff48;
+  --primary-hover: #ccf52c;
+  --primary-foreground: #09090b;
+  --ring: #b0cc2e;
 
   --tier-green: #16a34a;
   --tier-green-soft: #dcfce7;
@@ -49,6 +49,8 @@
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-display: var(--font-archivo), var(--font-geist-sans), ui-sans-serif,
+    system-ui, sans-serif;
 }
 
 * {
