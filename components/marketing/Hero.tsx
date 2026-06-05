@@ -22,14 +22,15 @@ export function Hero({
         className="pointer-events-none absolute inset-0 select-none bg-[linear-gradient(to_right,rgba(9,9,11,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(9,9,11,0.06)_1px,transparent_1px)] bg-size-[64px_64px]"
       />
 
-      <div className="relative mx-auto max-w-5xl px-5 pt-32 pb-0 sm:px-6 sm:pt-40">
+      <div className="relative mx-auto max-w-5xl px-5 pt-32 pb-20 sm:px-6 sm:pt-40 sm:pb-24">
         <h1 className="max-w-3xl font-display text-5xl leading-[0.92] font-extrabold tracking-tight text-balance sm:text-7xl">
           Your creator collabs just got smarter
         </h1>
 
         <p className="mt-6 max-w-xl text-lg leading-relaxed text-zinc-800 sm:text-xl">
-          Collab turns every DM and intake form into vetted, priced, ready-to-sign
-          creator deals — so you stop guessing on fit, rates, and contracts.
+          Collab turns every DM and intake form into vetted, priced,
+          ready-to-sign creator deals — so you stop guessing on fit, rates, and
+          contracts.
         </p>
 
         <div className="mt-9">
@@ -41,7 +42,7 @@ export function Hero({
           </Link>
         </div>
 
-        <ul className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 font-mono text-xs tracking-wide text-zinc-700 uppercase">
+        <ul className="mt-10 mb-12 flex flex-wrap items-center gap-x-6 gap-y-3 font-mono text-xs tracking-wide text-zinc-700 uppercase">
           {TRUST_ITEMS.map((item) => (
             <li key={item} className="flex items-center gap-2">
               <span
@@ -53,13 +54,7 @@ export function Hero({
           ))}
         </ul>
 
-        <div className="relative z-10 mt-14 -mb-24 sm:mt-16 sm:-mb-32">
-          <p className="mb-4 font-mono text-xs tracking-wide text-zinc-700 uppercase">
-            Every applicant scored against your rules — before you spend a second
-            reviewing.
-          </p>
-          <DashboardMock className="shadow-2xl shadow-zinc-950/25" />
-        </div>
+        <DashboardMock className="shadow-2xl shadow-zinc-950/25" />
       </div>
     </section>
   );

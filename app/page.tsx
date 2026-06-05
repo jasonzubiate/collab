@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { BeforeAfter } from "@/components/marketing/BeforeAfter";
+import { CollabCollage } from "@/components/marketing/CollabCollage";
 import { CreatorCallout } from "@/components/marketing/CreatorCallout";
 import { FinalCta } from "@/components/marketing/FinalCta";
 import { Hero } from "@/components/marketing/Hero";
@@ -23,6 +24,7 @@ export default async function HomePage() {
 
       <main>
         <Hero primaryHref={primaryHref} primaryLabel={primaryLabel} />
+        <CollabCollage />
         <BeforeAfter primaryHref={primaryHref} />
         <HowItWorks />
         <CreatorCallout />

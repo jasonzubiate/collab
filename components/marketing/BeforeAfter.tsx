@@ -57,7 +57,7 @@ function ChecklistRow({
 
 export function BeforeAfter({ primaryHref }: { primaryHref: string }) {
   return (
-    <section className="bg-background px-5 pt-36 pb-20 sm:px-6 sm:pt-48 sm:pb-28">
+    <section className="bg-background px-5 pt-8 pb-20 sm:px-6 sm:pt-12 sm:pb-28">
       <div className="mx-auto mb-12 max-w-2xl text-center sm:mb-16">
         <h2 className="font-display text-3xl leading-[0.95] font-extrabold tracking-tight text-zinc-950 text-balance sm:text-5xl">
           Working with creators should be as easy as a DM
