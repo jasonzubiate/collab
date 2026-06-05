@@ -56,3 +56,44 @@ export async function registerBrand(
 
   return { ok: true, ...result };
 }
+
+export type CreateBrandForUserResult =
+  | { ok: true; brandId: string }
+  | { ok: false; error: string };
+
+/**
+ * Create a `Brand` for an existing brand user that signed up via OAuth (and so
+ * has no company name yet). Used by the post-Google onboarding step.
+ */
+export async function createBrandForUser(
+  userId: string,
+  companyName: string,
+): Promise<CreateBrandForUserResult> {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || user.userType !== "BRAND") {
+    return { ok: false, error: "Account is not eligible for brand onboarding." };
+  }
+  if (user.brandId) {
+    return { ok: true, brandId: user.brandId };
+  }
+
+  const slug = await uniqueBrandSlug(companyName);
+
+  const brand = await prisma.$transaction(async (tx) => {
+    const created = await tx.brand.create({
+      data: {
+        companyName: companyName.trim(),
+        slug,
+      },
+    });
+
+    await tx.user.update({
+      where: { id: userId },
+      data: { brandId: created.id },
+    });
+
+    return created;
+  });
+
+  return { ok: true, brandId: brand.id };
+}

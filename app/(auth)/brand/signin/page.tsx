@@ -4,11 +4,17 @@ import { auth } from "@/auth";
 import { dashboardPath } from "@/lib/auth/dashboardPath";
 import { BrandSigninForm } from "./BrandSigninForm";
 
-export default async function BrandSigninPage() {
+export default async function BrandSigninPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   const session = await auth();
   if (session?.user?.userType === "BRAND") {
     redirect(dashboardPath("BRAND"));
   }
+
+  const params = await searchParams;
 
   return (
     <main className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-zinc-100 p-8 shadow-xl shadow-zinc-950/10">
@@ -26,6 +32,13 @@ export default async function BrandSigninPage() {
           Manage campaigns and review creator proposals.
         </p>
       </div>
+
+      {params.error ? (
+        <p className="mb-4 text-sm text-danger" role="alert">
+          {params.error}
+        </p>
+      ) : null}
+
       <BrandSigninForm />
       <p className="mt-6 text-center text-sm text-muted-foreground">
         Are you a creator?{" "}

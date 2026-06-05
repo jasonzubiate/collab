@@ -1,17 +1,75 @@
 "use server";
 
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
-import { signIn, signOut } from "@/auth";
+import { auth, signIn, signOut, unstable_update } from "@/auth";
 import { dashboardPath } from "@/lib/auth/dashboardPath";
-import { registerBrand } from "@/lib/services/brandAuthService";
+import {
+  GOOGLE_INTENT_COOKIE,
+  type GoogleIntent,
+} from "@/lib/auth/googleIntent";
+import {
+  createBrandForUser,
+  registerBrand,
+} from "@/lib/services/brandAuthService";
 import { createCreatorMagicLinkToken } from "@/lib/services/creatorAuthService";
 import {
+  brandOnboardingSchema,
   brandSignupSchema,
   creatorEmailSchema,
   signinSchema,
 } from "@/lib/validation/authSchemas";
 
 export type AuthFormState = { error?: string; success?: string };
+
+export async function startGoogleAuth(intent: GoogleIntent): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.set(GOOGLE_INTENT_COOKIE, intent, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 10,
+  });
+
+  await signIn("google", {
+    redirectTo:
+      intent === "brand" ? "/brand/onboarding" : dashboardPath("CREATOR"),
+  });
+}
+
+export async function completeBrandOnboarding(
+  _prevState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const session = await auth();
+  if (!session?.user || session.user.userType !== "BRAND") {
+    return { error: "Sign in as a brand to continue." };
+  }
+  if (session.user.brandId) {
+    redirect(dashboardPath("BRAND"));
+  }
+
+  const parsed = brandOnboardingSchema.safeParse({
+    companyName: formData.get("companyName"),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+  }
+
+  const result = await createBrandForUser(
+    session.user.id,
+    parsed.data.companyName,
+  );
+  if (!result.ok) {
+    return { error: result.error };
+  }
+
+  await unstable_update({ user: { brandId: result.brandId } });
+
+  redirect("/admin/campaigns?onboarding=1");
+}
 
 /** @deprecated Use AuthFormState */
 export type LoginState = AuthFormState;

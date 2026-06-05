@@ -29,12 +29,16 @@ export const authConfig = {
 
       return true;
     },
-    jwt({ token, user }) {
+    jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id as string;
         token.userType = user.userType;
         token.brandId = user.brandId;
         token.creatorProfileId = user.creatorProfileId;
+      }
+      // Refresh brandId after brand onboarding (via `unstable_update`).
+      if (trigger === "update" && session?.user?.brandId) {
+        token.brandId = session.user.brandId as string;
       }
       return token;
     },

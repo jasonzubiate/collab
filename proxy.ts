@@ -26,7 +26,7 @@ export default auth((req) => {
       return NextResponse.redirect(new URL(wrongRole, req.url));
     }
     if (userType === "BRAND" && !session.user.brandId) {
-      return NextResponse.redirect(new URL(signinPath("BRAND"), req.url));
+      return NextResponse.redirect(new URL("/brand/onboarding", req.url));
     }
     return NextResponse.next();
   }

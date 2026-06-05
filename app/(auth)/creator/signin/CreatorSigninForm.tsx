@@ -50,7 +50,13 @@ export function CreatorEmailSigninForm() {
         </p>
       ) : null}
 
-      <Button type="submit" size="lg" className="w-full" disabled={pending}>
+      <Button
+        type="submit"
+        size="lg"
+        variant="secondary"
+        className="w-full"
+        disabled={pending}
+      >
         {pending ? "Sending link…" : "Email me a signin link"}
       </Button>
     </form>

@@ -19,6 +19,12 @@ export const brandSignupSchema = z.object({
 
 export type BrandSignupInput = z.infer<typeof brandSignupSchema>;
 
+export const brandOnboardingSchema = z.object({
+  companyName: z.string().min(1, "Company name is required.").max(120),
+});
+
+export type BrandOnboardingInput = z.infer<typeof brandOnboardingSchema>;
+
 export const creatorEmailSchema = z.object({
   email: z.string().email("Enter a valid email address."),
 });

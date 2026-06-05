@@ -2,6 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { dashboardPath } from "@/lib/auth/dashboardPath";
+import { AuthDivider } from "@/components/auth/AuthDivider";
+import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
 import {
   CreatorEmailSigninForm,
   CreatorInstagramButton,
@@ -30,16 +32,12 @@ export default async function CreatorSignupPage() {
         </p>
       </div>
 
-      <CreatorInstagramButton />
-
-      <div className="relative my-6">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-zinc-200" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-zinc-100 px-2 text-muted-foreground">or</span>
-        </div>
+      <div className="space-y-3">
+        <GoogleAuthButton intent="creator" />
+        <CreatorInstagramButton />
       </div>
+
+      <AuthDivider label="or use your email" />
 
       <CreatorEmailSigninForm />
 
