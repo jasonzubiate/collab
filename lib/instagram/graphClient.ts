@@ -93,12 +93,16 @@ export async function exchangeForLongLivedToken(
   shortLivedToken: string,
 ): Promise<LongLivedToken> {
   const { appSecret } = requireAppCredentials();
-  const params = new URLSearchParams({
+  const body = new URLSearchParams({
     grant_type: "ig_exchange_token",
     client_secret: appSecret,
     access_token: shortLivedToken,
   });
-  const res = await fetch(`${graphBaseUrl()}/access_token?${params.toString()}`);
+  const res = await fetch(`${graphBaseUrl()}/access_token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  });
   if (!res.ok) throw new GraphApiError(await parseError(res), res.status);
 
   const data = (await res.json()) as {

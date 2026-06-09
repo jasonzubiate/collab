@@ -17,7 +17,8 @@ export async function GET(request: Request) {
   if (admin instanceof Response) return admin;
 
   const url = new URL(request.url);
-  const code = url.searchParams.get("code");
+  // Meta appends `#_` to the callback URL; strip if it leaked into the code param.
+  const code = url.searchParams.get("code")?.replace(/#_$/, "");
   const error = url.searchParams.get("error");
   const settingsUrl = `${appBaseUrl()}/admin/settings/instagram`;
 
