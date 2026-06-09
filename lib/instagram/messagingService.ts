@@ -37,7 +37,12 @@ export async function sendDm(
 
   try {
     const token = decryptToken(connection.accessTokenEnc);
-    const { messageId } = await sendTextMessage(token, recipientIgsid, text);
+    const { messageId } = await sendTextMessage(
+      token,
+      connection.igUserId,
+      recipientIgsid,
+      text,
+    );
     await prisma.instagramConnection.update({
       where: { brandId },
       data: { updatedAt: new Date() },

@@ -54,6 +54,10 @@ export async function POST(request: Request) {
   }
 
   const events = parseInboundEvents(payload);
+  console.info("[instagram-webhook] received", {
+    eventCount: events.length,
+    object: (payload as { object?: string })?.object,
+  });
 
   after(async () => {
     for (const event of events) {

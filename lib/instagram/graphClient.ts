@@ -153,12 +153,15 @@ export async function fetchProfile(accessToken: string): Promise<IgProfile> {
 }
 
 /** Subscribe the app to messaging webhooks for the connected account. */
-export async function subscribeWebhooks(accessToken: string): Promise<void> {
+export async function subscribeWebhooks(
+  accessToken: string,
+  igUserId: string,
+): Promise<void> {
   const body = new URLSearchParams({
     subscribed_fields: "messages,messaging_postbacks",
     access_token: accessToken,
   });
-  const res = await fetch(`${graphBaseUrl()}/me/subscribed_apps`, {
+  const res = await fetch(`${graphBaseUrl()}/${igUserId}/subscribed_apps`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body,
@@ -167,10 +170,13 @@ export async function subscribeWebhooks(accessToken: string): Promise<void> {
 }
 
 /** Best-effort unsubscribe used on disconnect. */
-export async function unsubscribeWebhooks(accessToken: string): Promise<void> {
+export async function unsubscribeWebhooks(
+  accessToken: string,
+  igUserId: string,
+): Promise<void> {
   const params = new URLSearchParams({ access_token: accessToken });
   const res = await fetch(
-    `${graphBaseUrl()}/me/subscribed_apps?${params.toString()}`,
+    `${graphBaseUrl()}/${igUserId}/subscribed_apps?${params.toString()}`,
     { method: "DELETE" },
   );
   if (!res.ok) throw new GraphApiError(await parseError(res), res.status);
@@ -179,10 +185,11 @@ export async function unsubscribeWebhooks(accessToken: string): Promise<void> {
 /** Send a plain-text DM to a recipient IGSID using the account's token. */
 export async function sendTextMessage(
   accessToken: string,
+  igUserId: string,
   recipientIgsid: string,
   text: string,
 ): Promise<{ messageId: string | null }> {
-  const res = await fetch(`${graphBaseUrl()}/me/messages`, {
+  const res = await fetch(`${graphBaseUrl()}/${igUserId}/messages`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

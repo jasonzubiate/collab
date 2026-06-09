@@ -58,8 +58,12 @@ export function InstagramConnectionPanel({
         setMessageType("ok");
         setMessage(
           data.igUsername
-            ? `Connection healthy — authorized as @${data.igUsername}.`
-            : "Connection healthy.",
+            ? `Connection healthy — authorized as @${data.igUsername}. Webhooks: ${
+                data.webhookSubscribed ? "subscribed" : "not subscribed"
+              }.`
+            : `Connection healthy. Webhooks: ${
+                data.webhookSubscribed ? "subscribed" : "not subscribed"
+              }.`,
         );
       } else {
         setMessageType("error");

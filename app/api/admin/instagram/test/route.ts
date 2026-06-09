@@ -9,5 +9,9 @@ export async function POST() {
   const result = await verifyConnection(admin.brandId);
   if (!result.ok) return jsonError(result.error ?? "Health check failed.", 400);
 
-  return jsonOk({ ok: true, igUsername: result.igUsername });
+  return jsonOk({
+    ok: true,
+    igUsername: result.igUsername,
+    webhookSubscribed: result.webhookSubscribed,
+  });
 }

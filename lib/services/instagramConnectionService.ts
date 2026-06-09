@@ -81,16 +81,20 @@ export async function completeConnection(
     const stored = await resolveStoredToken(short.accessToken);
     const profile = await fetchProfile(stored.accessToken);
 
+    const igUserId = profile.igUserId || short.userId;
+
     let webhookSubscribed = false;
     try {
-      await subscribeWebhooks(stored.accessToken);
+      await subscribeWebhooks(stored.accessToken, igUserId);
       webhookSubscribed = true;
-    } catch {
+    } catch (error) {
       // Non-fatal: the connection is stored; admin can retry subscription.
+      console.error("[instagram-connect] webhook subscribe failed", {
+        igUserId,
+        error: error instanceof Error ? error.message : String(error),
+      });
       webhookSubscribed = false;
     }
-
-    const igUserId = profile.igUserId || short.userId;
     const accessTokenEnc = encryptToken(stored.accessToken);
 
     await prisma.instagramConnection.upsert({
@@ -132,7 +136,7 @@ export async function disconnect(brandId: string): Promise<void> {
 
   try {
     const token = decryptToken(connection.accessTokenEnc);
-    await unsubscribeWebhooks(token);
+    await unsubscribeWebhooks(token, connection.igUserId);
   } catch {
     // Best-effort: continue with local deletion even if revoke fails.
   }
@@ -147,7 +151,12 @@ export async function disconnect(brandId: string): Promise<void> {
 /** Lightweight health check: confirm the stored token still resolves a profile. */
 export async function verifyConnection(
   brandId: string,
-): Promise<{ ok: boolean; igUsername?: string | null; error?: string }> {
+): Promise<{
+  ok: boolean;
+  igUsername?: string | null;
+  webhookSubscribed?: boolean;
+  error?: string;
+}> {
   const connection = await getConnectionForBrand(brandId);
   if (!connection) return { ok: false, error: "Not connected." };
   try {
@@ -159,7 +168,25 @@ export async function verifyConnection(
         data: { igUsername: profile.username },
       });
     }
-    return { ok: true, igUsername: profile.username };
+
+    let webhookSubscribed = connection.webhookSubscribed;
+    if (!webhookSubscribed) {
+      try {
+        await subscribeWebhooks(token, connection.igUserId);
+        await prisma.instagramConnection.update({
+          where: { brandId },
+          data: { webhookSubscribed: true },
+        });
+        webhookSubscribed = true;
+      } catch (error) {
+        console.error("[instagram-connect] webhook subscribe retry failed", {
+          igUserId: connection.igUserId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    return { ok: true, igUsername: profile.username, webhookSubscribed };
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Health check failed.";
