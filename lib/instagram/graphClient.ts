@@ -6,6 +6,7 @@
  * to surface or swallow the failure. Tokens are never logged.
  */
 import {
+  IG_GRAPH_TOKEN_HOST,
   IG_OAUTH_TOKEN_URL,
   IG_SCOPES,
   IG_OAUTH_AUTHORIZE_URL,
@@ -26,13 +27,23 @@ export class GraphApiError extends Error {
 async function parseError(res: Response): Promise<string> {
   try {
     const data = (await res.json()) as {
-      error?: { message?: string; error_user_msg?: string };
+      error?: { message?: string; error_user_msg?: string; code?: number };
+      error_message?: string;
     };
-    return (
+    const message =
       data.error?.error_user_msg ??
       data.error?.message ??
-      `Graph API error (${res.status})`
-    );
+      data.error_message ??
+      `Graph API error (${res.status})`;
+
+    if (
+      data.error?.code === 100 &&
+      message.toLowerCase().includes("method type")
+    ) {
+      return `${message} — confirm the Meta app has completed access/business verification and App Review for instagram_business_basic and instagram_business_manage_messages, or add your Instagram account as an Instagram Tester while the app is in Development mode.`;
+    }
+
+    return message;
   } catch {
     return `Graph API error (${res.status})`;
   }
@@ -93,16 +104,15 @@ export async function exchangeForLongLivedToken(
   shortLivedToken: string,
 ): Promise<LongLivedToken> {
   const { appSecret } = requireAppCredentials();
-  const body = new URLSearchParams({
+  const params = new URLSearchParams({
     grant_type: "ig_exchange_token",
     client_secret: appSecret,
     access_token: shortLivedToken,
   });
-  const res = await fetch(`${graphBaseUrl()}/access_token`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-  });
+  // Token exchange is unversioned: graph.instagram.com/access_token (not /v21.0/).
+  const res = await fetch(
+    `${IG_GRAPH_TOKEN_HOST}/access_token?${params.toString()}`,
+  );
   if (!res.ok) throw new GraphApiError(await parseError(res), res.status);
 
   const data = (await res.json()) as {

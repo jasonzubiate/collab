@@ -20,6 +20,9 @@ export function graphBaseUrl(): string {
   return `https://graph.instagram.com/${graphApiVersion()}`;
 }
 
+/** Unversioned host for token exchange/refresh (not under /vX.Y/). */
+export const IG_GRAPH_TOKEN_HOST = "https://graph.instagram.com";
+
 /** Host used for the OAuth code exchange (distinct from the graph host). */
 export const IG_OAUTH_TOKEN_URL = "https://api.instagram.com/oauth/access_token";
 
