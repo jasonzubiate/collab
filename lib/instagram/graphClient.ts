@@ -40,7 +40,7 @@ async function parseError(res: Response): Promise<string> {
       data.error?.code === 100 &&
       message.toLowerCase().includes("method type")
     ) {
-      return `${message} — confirm the Meta app has completed access/business verification and App Review for instagram_business_basic and instagram_business_manage_messages, or add your Instagram account as an Instagram Tester while the app is in Development mode.`;
+      return `${message} — your app is in Live mode but Graph API access for these permissions is not active yet. Submit App Review for instagram_business_basic and instagram_business_manage_messages (with business verification), or switch back to Development mode to test with app role users while review is pending.`;
     }
 
     return message;
@@ -137,7 +137,8 @@ export async function fetchProfile(accessToken: string): Promise<IgProfile> {
     fields: "user_id,username",
     access_token: accessToken,
   });
-  const res = await fetch(`${graphBaseUrl()}/me?${params.toString()}`);
+  // Profile lookup uses the unversioned /me host for Instagram Login tokens.
+  const res = await fetch(`${IG_GRAPH_TOKEN_HOST}/me?${params.toString()}`);
   if (!res.ok) throw new GraphApiError(await parseError(res), res.status);
 
   const data = (await res.json()) as {

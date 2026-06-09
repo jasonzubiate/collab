@@ -56,18 +56,34 @@ export type CompleteConnectionResult =
  * Finish the OAuth flow: exchange the code, upgrade to a long-lived token,
  * fetch the profile, subscribe webhooks, and persist the encrypted token.
  */
+async function resolveStoredToken(shortLivedToken: string): Promise<{
+  accessToken: string;
+  expiresAt: Date | null;
+}> {
+  try {
+    const long = await exchangeForLongLivedToken(shortLivedToken);
+    return { accessToken: long.accessToken, expiresAt: long.expiresAt };
+  } catch {
+    // Live apps without Advanced Access often block long-lived exchange.
+    return {
+      accessToken: shortLivedToken,
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+    };
+  }
+}
+
 export async function completeConnection(
   brandId: string,
   code: string,
 ): Promise<CompleteConnectionResult> {
   try {
     const short = await exchangeCodeForToken(code);
-    const long = await exchangeForLongLivedToken(short.accessToken);
-    const profile = await fetchProfile(long.accessToken);
+    const stored = await resolveStoredToken(short.accessToken);
+    const profile = await fetchProfile(stored.accessToken);
 
     let webhookSubscribed = false;
     try {
-      await subscribeWebhooks(long.accessToken);
+      await subscribeWebhooks(stored.accessToken);
       webhookSubscribed = true;
     } catch {
       // Non-fatal: the connection is stored; admin can retry subscription.
@@ -75,7 +91,7 @@ export async function completeConnection(
     }
 
     const igUserId = profile.igUserId || short.userId;
-    const accessTokenEnc = encryptToken(long.accessToken);
+    const accessTokenEnc = encryptToken(stored.accessToken);
 
     await prisma.instagramConnection.upsert({
       where: { brandId },
@@ -84,14 +100,14 @@ export async function completeConnection(
         igUserId,
         igUsername: profile.username,
         accessTokenEnc,
-        tokenExpiresAt: long.expiresAt,
+        tokenExpiresAt: stored.expiresAt,
         webhookSubscribed,
       },
       update: {
         igUserId,
         igUsername: profile.username,
         accessTokenEnc,
-        tokenExpiresAt: long.expiresAt,
+        tokenExpiresAt: stored.expiresAt,
         webhookSubscribed,
       },
     });
