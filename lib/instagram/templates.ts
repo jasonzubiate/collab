@@ -4,7 +4,6 @@
  * The `welcome` template carries the required automation disclosure and the
  * STOP opt-out (PRD section 6). Placeholders are `{{key}}`.
  */
-import { richRepliesEnabled } from "./config";
 import { Payload } from "./messageContent";
 import type { OutboundMessage, QuickReply } from "./messageContent";
 
@@ -76,17 +75,15 @@ function scopeCountChips(): QuickReply[] {
  * Build a structured outbound message for a template: the rendered text plus
  * the tappable quick replies / buttons appropriate for that step.
  *
- * Flag-gated: when `IG_RICH_REPLIES_ENABLED` is off, this returns `{ text }`
- * only, so the channel falls back to plain-text / numeric replies and existing
- * behavior is preserved. The payload vocabulary mirrors the text-parser inputs
- * so the conversation service can route taps and typed replies identically.
+ * Template copy still describes plain-text / numeric replies so users can type
+ * instead of tapping. The payload vocabulary mirrors the text-parser inputs so
+ * the conversation service can route taps and typed replies identically.
  */
 export function buildMessage(
   key: TemplateKey,
   vars: TemplateVars = {},
 ): OutboundMessage {
   const text = renderTemplate(key, vars);
-  if (!richRepliesEnabled()) return { text };
 
   switch (key) {
     case "welcome":

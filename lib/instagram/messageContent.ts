@@ -4,8 +4,8 @@
  * These describe the *intent* of an outbound message (text + optional tappable
  * quick replies or buttons). The Graph client decides how to serialize them for
  * Meta, and the conversation service decides what to send. All of this is
- * feature-flag gated (`IG_RICH_REPLIES_ENABLED`) so we can ship dark and fall
- * back to plain text / numeric replies instantly.
+ * Incoming plain text / numeric replies are still accepted as a fallback when
+ * users type instead of tapping chips or buttons.
  */
 
 /** A tappable quick-reply chip. Meta caps `title` at 20 characters. */

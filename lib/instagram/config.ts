@@ -47,17 +47,6 @@ export function webhookVerifyToken(): string | undefined {
 export function appSecret(): string | undefined {
   return process.env.META_APP_SECRET;
 }
-
-/**
- * Feature flag for rich DM replies (tappable quick replies + button templates).
- * Off by default so the channel ships with plain-text/numeric replies and can be
- * rolled back instantly. Truthy values: "1" or "true".
- */
-export function richRepliesEnabled(): boolean {
-  const value = process.env.IG_RICH_REPLIES_ENABLED;
-  return value === "1" || value === "true";
-}
-
 /**
  * Phase B feature flag: free-text scope parsing via an LLM. Off by default so
  * the numeric slot-filling flow is unchanged until explicitly enabled. Truthy
