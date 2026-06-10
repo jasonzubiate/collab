@@ -49,6 +49,16 @@ export function appSecret(): string | undefined {
 }
 
 /**
+ * Feature flag for rich DM replies (tappable quick replies + button templates).
+ * Off by default so the channel ships with plain-text/numeric replies and can be
+ * rolled back instantly. Truthy values: "1" or "true".
+ */
+export function richRepliesEnabled(): boolean {
+  const value = process.env.IG_RICH_REPLIES_ENABLED;
+  return value === "1" || value === "true";
+}
+
+/**
  * Returns the configured Meta app credentials, throwing if missing. Callers in
  * route handlers should catch and surface a clear "Instagram is not configured"
  * error rather than a 500.

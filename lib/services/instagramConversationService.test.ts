@@ -152,6 +152,7 @@ vi.mock("@/lib/services/instagramConnectionService", () => ({
 }));
 
 import { processInboundMessage } from "./instagramConversationService";
+import { Payload } from "@/lib/instagram/messageContent";
 
 const BRAND_ID = "brand_1";
 const CAMPAIGN_ID = "campaign_1";
@@ -189,8 +190,8 @@ const eligibleDraft = {
 
 function makeSender() {
   const sent: string[] = [];
-  const send = vi.fn(async (_b: string, _u: string, text: string) => {
-    sent.push(text);
+  const send = vi.fn(async (_b: string, _u: string, content: { text: string }) => {
+    sent.push(content.text);
   });
   return { sent, send };
 }
@@ -222,6 +223,17 @@ beforeEach(() => {
 async function deliver(text: string, send: ReturnType<typeof makeSender>["send"]) {
   await processInboundMessage(
     { brandId: BRAND_ID, instagramScopedUserId: IGSID, text },
+    { send },
+  );
+}
+
+async function deliverPayload(
+  postbackPayload: string,
+  send: ReturnType<typeof makeSender>["send"],
+  text = postbackPayload,
+) {
+  await processInboundMessage(
+    { brandId: BRAND_ID, instagramScopedUserId: IGSID, text, postbackPayload },
     { send },
   );
 }
@@ -327,5 +339,57 @@ describe("DM conversation state machine", () => {
     await deliver("nine", send);
     expect(conversation()!.state).toBe("SCOPE_REELS");
     expect(sent.at(-1)).toContain("How many Reels");
+  });
+
+  it("routes a USAGE_30 quick-reply payload at SCOPE_USAGE → ESTIMATE_REVIEW", async () => {
+    const { sent, send } = makeSender();
+    await deliver("collab", send); // keyword intent creates the WELCOME conversation
+    await deliverPayload(Payload.START, send, "Start"); // welcome → start via tap
+    await deliverPayload("2", send); // reels via numeric chip
+    await deliverPayload("1", send); // stories via numeric chip
+    expect(conversation()!.state).toBe("SCOPE_USAGE");
+
+    await deliverPayload(Payload.USAGE_30, send, "30-day");
+    expect(conversation()!.state).toBe("ESTIMATE_REVIEW");
+    expect(estimateProposalMock).toHaveBeenCalledWith("draft_1", {
+      reelsCount: 2,
+      storiesCount: 1,
+      adUsageDays: 30,
+    });
+    expect(sent.at(-1)).toContain("$500.00");
+  });
+
+  it("still drives the plain numeric path (regression)", async () => {
+    const { sent, send } = makeSender();
+    await deliver("collab", send);
+    await deliver("start", send);
+    await deliver("2", send);
+    await deliver("1", send);
+    await deliver("2", send); // usage = 30
+    expect(conversation()!.state).toBe("ESTIMATE_REVIEW");
+    expect(sent.at(-1)).toContain("$500.00");
+  });
+
+  it("completes via a SUBMIT postback at ESTIMATE_REVIEW", async () => {
+    const { send } = makeSender();
+    await deliver("collab", send);
+    await deliver("start", send);
+    await deliver("2", send);
+    await deliver("1", send);
+    await deliver("2", send);
+    expect(conversation()!.state).toBe("ESTIMATE_REVIEW");
+
+    await deliverPayload(Payload.SUBMIT, send, "Submit");
+    expect(conversation()!.state).toBe("COMPLETED");
+    expect(conversation()!.proposalId).toBe("p1");
+  });
+
+  it("honors a STOP payload mid-flow", async () => {
+    const { sent, send } = makeSender();
+    await deliver("collab", send);
+    await deliver("start", send);
+    await deliverPayload(Payload.STOP, send, "Stop");
+    expect(conversation()!.state).toBe("STOPPED");
+    expect(sent.at(-1)).toContain("won’t send any more automated messages");
   });
 });

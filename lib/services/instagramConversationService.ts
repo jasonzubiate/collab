@@ -19,10 +19,12 @@ import {
 } from "@/lib/services/proposalService";
 import type { RequestedScope } from "@/lib/pricing/types";
 import { hasCollabIntent, isStartKeyword, isStopKeyword } from "@/lib/instagram/intent";
-import { renderTemplate, usageLabel } from "@/lib/instagram/templates";
+import { buildMessage, usageLabel } from "@/lib/instagram/templates";
+import { Payload } from "@/lib/instagram/messageContent";
+import type { OutboundMessage } from "@/lib/instagram/messageContent";
 import { fetchScopedUserProfile } from "@/lib/instagram/graphClient";
 import { normalizeHandle } from "@/lib/instagram/identity";
-import { sendDm } from "@/lib/instagram/messagingService";
+import { sendDmRich } from "@/lib/instagram/messagingService";
 import { getAccessToken } from "@/lib/services/instagramConnectionService";
 
 export type InstagramConversationState =
@@ -58,12 +60,14 @@ export type InboundMessage = {
   brandId: string;
   instagramScopedUserId: string;
   text: string;
+  /** Canonical payload from a quick-reply tap or button postback, if any. */
+  postbackPayload?: string;
 };
 
 export type Sender = (
   brandId: string,
   instagramScopedUserId: string,
-  text: string,
+  content: OutboundMessage,
 ) => Promise<unknown>;
 
 export type ProcessDeps = {
@@ -85,6 +89,40 @@ function parseUsageChoice(text: string): 0 | 30 | 90 | null {
   if (trimmed === "2") return 30;
   if (trimmed === "3") return 90;
   return null;
+}
+
+/**
+ * Normalize a quick-reply / button payload into the same canonical text token
+ * the typed-reply parsers already understand, so tap and type paths route
+ * identically. When no payload is present (a plain typed reply), the original
+ * text is returned unchanged — preserving the existing numeric/keyword flow.
+ */
+function interpret(
+  _state: InstagramConversationState,
+  text: string,
+  postbackPayload?: string,
+): string {
+  if (!postbackPayload) return text;
+  switch (postbackPayload) {
+    case Payload.START:
+      return "start";
+    case Payload.STOP:
+      return "stop";
+    case Payload.USAGE_NONE:
+      return "1";
+    case Payload.USAGE_30:
+      return "2";
+    case Payload.USAGE_90:
+      return "3";
+    case Payload.SUBMIT:
+    case Payload.SUBMIT_ANYWAY:
+      return "submit";
+    case Payload.EDIT:
+      return "edit";
+    default:
+      // Numeric scope payloads ("0".."5") pass through as the count string.
+      return /^[0-5]$/.test(postbackPayload) ? postbackPayload : text;
+  }
 }
 
 async function getActiveCampaign(brandId: string) {
@@ -111,8 +149,8 @@ export async function processInboundMessage(
   event: InboundMessage,
   deps: ProcessDeps = {},
 ): Promise<void> {
-  const send: Sender = deps.send ?? ((b, u, t) => sendDm(b, u, t));
-  const { brandId, instagramScopedUserId, text } = event;
+  const send: Sender = deps.send ?? ((b, u, c) => sendDmRich(b, u, c));
+  const { brandId, instagramScopedUserId, text, postbackPayload } = event;
 
   const existing = await prisma.instagramConversation.findFirst({
     where: { brandId, instagramScopedUserId },
@@ -125,19 +163,22 @@ export async function processInboundMessage(
   const state = (existing?.state ?? "IDLE") as InstagramConversationState;
   const isActive = existing != null && !expired && ACTIVE_STATES.has(state);
 
+  // Route taps and typed replies through the same canonical token.
+  const effectiveText = interpret(state, text, postbackPayload);
+
   // STOP wins in any active (non-terminal) state.
-  if (isActive && isStopKeyword(text)) {
+  if (isActive && isStopKeyword(effectiveText)) {
     const won = await applyTransition(existing!, {
       state: "STOPPED",
       lastInboundAt: now,
     });
-    if (won) await send(brandId, instagramScopedUserId, renderTemplate("stopped"));
+    if (won) await send(brandId, instagramScopedUserId, buildMessage("stopped"));
     return;
   }
 
   // Mid-flow: route the reply to the state machine.
   if (isActive) {
-    await advance(existing!, state, text, send);
+    await advance(existing!, state, effectiveText, send);
     return;
   }
 
@@ -164,7 +205,7 @@ async function startOrRestart(
     await send(
       brandId,
       instagramScopedUserId,
-      renderTemplate("no_active_campaign", {
+      buildMessage("no_active_campaign", {
         brandName: brand?.companyName ?? "us",
       }),
     );
@@ -210,7 +251,7 @@ async function startOrRestart(
   await send(
     brandId,
     instagramScopedUserId,
-    renderTemplate("welcome", {
+    buildMessage("welcome", {
       brandName: brand?.companyName ?? "the brand",
       campaignName: campaign.name,
     }),
@@ -232,7 +273,7 @@ async function advance(
         await send(
           brandId,
           instagramScopedUserId,
-          renderTemplate("invalid_input", { hint: "Reply START to begin." }),
+          buildMessage("invalid_input", { hint: "Reply START to begin." }),
         );
         return;
       }
@@ -247,7 +288,7 @@ async function advance(
           lastInboundAt: now,
         });
         if (won) {
-          await send(brandId, instagramScopedUserId, renderTemplate("ask_reels"));
+          await send(brandId, instagramScopedUserId, buildMessage("ask_reels"));
         }
         return;
       }
@@ -255,7 +296,7 @@ async function advance(
       await send(
         brandId,
         instagramScopedUserId,
-        renderTemplate("invalid_input", {
+        buildMessage("invalid_input", {
           hint: "Reply SUBMIT to save your details anyway, or STOP.",
         }),
       );
@@ -268,7 +309,7 @@ async function advance(
         await send(
           brandId,
           instagramScopedUserId,
-          renderTemplate("invalid_input", {
+          buildMessage("invalid_input", {
             hint: "How many Reels (0–5)? Reply with a number.",
           }),
         );
@@ -281,7 +322,7 @@ async function advance(
         lastInboundAt: now,
       });
       if (won) {
-        await send(brandId, instagramScopedUserId, renderTemplate("ask_stories"));
+        await send(brandId, instagramScopedUserId, buildMessage("ask_stories"));
       }
       return;
     }
@@ -292,7 +333,7 @@ async function advance(
         await send(
           brandId,
           instagramScopedUserId,
-          renderTemplate("invalid_input", {
+          buildMessage("invalid_input", {
             hint: "How many Stories (0–5)? Reply with a number.",
           }),
         );
@@ -309,11 +350,9 @@ async function advance(
           lastInboundAt: now,
         });
         if (won) {
-          await send(
-            brandId,
-            instagramScopedUserId,
-            "Please include at least one Reel or Story. How many Reels (0–5)?",
-          );
+          await send(brandId, instagramScopedUserId, {
+            text: "Please include at least one Reel or Story. How many Reels (0–5)?",
+          });
         }
         return;
       }
@@ -325,7 +364,7 @@ async function advance(
         lastInboundAt: now,
       });
       if (won) {
-        await send(brandId, instagramScopedUserId, renderTemplate("ask_usage"));
+        await send(brandId, instagramScopedUserId, buildMessage("ask_usage"));
       }
       return;
     }
@@ -336,7 +375,7 @@ async function advance(
         await send(
           brandId,
           instagramScopedUserId,
-          renderTemplate("invalid_input", {
+          buildMessage("invalid_input", {
             hint: "Usage rights: 1 = none, 2 = 30-day paid ads, 3 = 90-day paid ads.",
           }),
         );
@@ -353,7 +392,7 @@ async function advance(
         await send(
           brandId,
           instagramScopedUserId,
-          renderTemplate("session_expired"),
+          buildMessage("session_expired"),
         );
         return;
       }
@@ -363,7 +402,7 @@ async function advance(
         await send(
           brandId,
           instagramScopedUserId,
-          renderTemplate("session_expired"),
+          buildMessage("session_expired"),
         );
         return;
       }
@@ -377,7 +416,7 @@ async function advance(
         await send(
           brandId,
           instagramScopedUserId,
-          renderTemplate("estimate", {
+          buildMessage("estimate", {
             estimate: estimate.formattedPayout,
             reels: scope.reelsCount,
             stories: scope.storiesCount,
@@ -397,7 +436,7 @@ async function advance(
           lastInboundAt: now,
         });
         if (won) {
-          await send(brandId, instagramScopedUserId, renderTemplate("ask_reels"));
+          await send(brandId, instagramScopedUserId, buildMessage("ask_reels"));
         }
         return;
       }
@@ -408,7 +447,7 @@ async function advance(
       await send(
         brandId,
         instagramScopedUserId,
-        renderTemplate("invalid_input", {
+        buildMessage("invalid_input", {
           hint: "Reply SUBMIT to send to the brand, or EDIT to change.",
         }),
       );
@@ -436,7 +475,7 @@ async function runEnrichment(
   });
   if (!claimed) return;
 
-  await send(brandId, instagramScopedUserId, renderTemplate("enriching"));
+  await send(brandId, instagramScopedUserId, buildMessage("enriching"));
 
   let creatorHandle: string | null = null;
   let creatorName: string | null = null;
@@ -473,7 +512,7 @@ async function runEnrichment(
   if (!current) return;
 
   if (!draft.ok) {
-    await send(brandId, instagramScopedUserId, renderTemplate("session_expired"));
+    await send(brandId, instagramScopedUserId, buildMessage("session_expired"));
     return;
   }
 
@@ -487,7 +526,7 @@ async function runEnrichment(
       draftScope: {},
     });
     if (won) {
-      await send(brandId, instagramScopedUserId, renderTemplate("ask_reels"));
+      await send(brandId, instagramScopedUserId, buildMessage("ask_reels"));
     }
     return;
   }
@@ -502,7 +541,7 @@ async function runEnrichment(
     await send(
       brandId,
       instagramScopedUserId,
-      renderTemplate("ineligible", {
+      buildMessage("ineligible", {
         minFollowers: campaign?.minFollowers ?? 0,
         minEngagement: campaign ? Number(campaign.minEngagementRate) : 0,
       }),
@@ -520,7 +559,7 @@ async function runSubmit(
 
   const scope = conversation.draftScope as RequestedScope | null;
   if (!conversation.draftId || !scope) {
-    await send(brandId, instagramScopedUserId, renderTemplate("session_expired"));
+    await send(brandId, instagramScopedUserId, buildMessage("session_expired"));
     return;
   }
 
@@ -533,7 +572,7 @@ async function runSubmit(
 
   const result = await submitProposal(conversation.draftId, scope);
   if (!result.ok) {
-    await send(brandId, instagramScopedUserId, renderTemplate("session_expired"));
+    await send(brandId, instagramScopedUserId, buildMessage("session_expired"));
     return;
   }
 
@@ -559,10 +598,10 @@ async function runSubmit(
   const brand = await prisma.brand.findUnique({ where: { id: brandId } });
   const message =
     result.matchTier === "ARCHIVED"
-      ? renderTemplate("submitted_archived", {
+      ? buildMessage("submitted_archived", {
           brandName: brand?.companyName ?? "the brand",
         })
-      : renderTemplate("submitted_qualified", {
+      : buildMessage("submitted_qualified", {
           estimate: result.formattedPayout,
           brandName: brand?.companyName ?? "the brand",
         });

@@ -77,6 +77,7 @@ export async function POST(request: Request) {
           brandId: connection.brandId,
           instagramScopedUserId: event.senderIgsid,
           text: event.text,
+          postbackPayload: event.postbackPayload,
         });
       } catch (error) {
         console.error("[instagram-webhook] processing failed", {

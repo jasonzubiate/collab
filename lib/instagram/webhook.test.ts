@@ -75,6 +75,84 @@ describe("parseInboundEvents", () => {
     expect(parseInboundEvents(payload)).toHaveLength(0);
   });
 
+  it("emits a postbackPayload for a quick-reply tap", () => {
+    const payload = {
+      object: "instagram",
+      entry: [
+        {
+          id: "IG_ACCOUNT_1",
+          messaging: [
+            {
+              sender: { id: "IGSID_CREATOR" },
+              recipient: { id: "IG_ACCOUNT_1" },
+              message: {
+                mid: "mid_qr",
+                text: "30-day",
+                quick_reply: { payload: "USAGE_30" },
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const events = parseInboundEvents(payload);
+    expect(events).toHaveLength(1);
+    expect(events[0]).toEqual({
+      recipientIgUserId: "IG_ACCOUNT_1",
+      senderIgsid: "IGSID_CREATOR",
+      mid: "mid_qr",
+      text: "30-day",
+      postbackPayload: "USAGE_30",
+    });
+  });
+
+  it("emits a postbackPayload for a top-level button postback (no longer dropped)", () => {
+    const payload = {
+      object: "instagram",
+      entry: [
+        {
+          id: "IG_ACCOUNT_1",
+          messaging: [
+            {
+              sender: { id: "IGSID_CREATOR" },
+              recipient: { id: "IG_ACCOUNT_1" },
+              postback: { mid: "mid_pb", payload: "SUBMIT", title: "Submit" },
+            },
+          ],
+        },
+      ],
+    };
+    const events = parseInboundEvents(payload);
+    expect(events).toHaveLength(1);
+    expect(events[0]).toEqual({
+      recipientIgUserId: "IG_ACCOUNT_1",
+      senderIgsid: "IGSID_CREATOR",
+      mid: "mid_pb",
+      text: "Submit",
+      postbackPayload: "SUBMIT",
+    });
+  });
+
+  it("falls back to the payload for text when a postback has no title", () => {
+    const payload = {
+      entry: [
+        {
+          id: "IG_ACCOUNT_1",
+          messaging: [
+            {
+              sender: { id: "IGSID_CREATOR" },
+              recipient: { id: "IG_ACCOUNT_1" },
+              postback: { mid: "mid_pb2", payload: "EDIT" },
+            },
+          ],
+        },
+      ],
+    };
+    const events = parseInboundEvents(payload);
+    expect(events[0].text).toBe("EDIT");
+    expect(events[0].postbackPayload).toBe("EDIT");
+  });
+
   it("returns empty for malformed payloads", () => {
     expect(parseInboundEvents(null)).toEqual([]);
     expect(parseInboundEvents({})).toEqual([]);

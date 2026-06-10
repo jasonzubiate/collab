@@ -9,7 +9,8 @@
  */
 import { prisma } from "@/lib/prisma";
 import { decryptToken } from "@/lib/crypto";
-import { GraphApiError, sendTextMessage } from "./graphClient";
+import { GraphApiError, sendRichMessage, sendTextMessage } from "./graphClient";
+import type { OutboundMessage } from "./messageContent";
 
 /** Meta's standard messaging window: 24h after the creator's last message. */
 export const MESSAGING_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -42,6 +43,45 @@ export async function sendDm(
       connection.igUserId,
       recipientIgsid,
       text,
+    );
+    await prisma.instagramConnection.update({
+      where: { brandId },
+      data: { updatedAt: new Date() },
+    });
+    return { ok: true, messageId };
+  } catch (error) {
+    if (error instanceof GraphApiError) {
+      return { ok: false, error: error.message, status: error.status };
+    }
+    const message = error instanceof Error ? error.message : "Send failed.";
+    return { ok: false, error: message };
+  }
+}
+
+/**
+ * Structured-message counterpart of `sendDm`. Resolves the brand's encrypted
+ * token and sends text + optional quick replies / buttons, swallowing failures
+ * into a `SendResult` exactly like `sendDm`.
+ */
+export async function sendDmRich(
+  brandId: string,
+  recipientIgsid: string,
+  content: OutboundMessage,
+): Promise<SendResult> {
+  const connection = await prisma.instagramConnection.findUnique({
+    where: { brandId },
+  });
+  if (!connection) {
+    return { ok: false, error: "Instagram is not connected for this brand." };
+  }
+
+  try {
+    const token = decryptToken(connection.accessTokenEnc);
+    const { messageId } = await sendRichMessage(
+      token,
+      connection.igUserId,
+      recipientIgsid,
+      content,
     );
     await prisma.instagramConnection.update({
       where: { brandId },
