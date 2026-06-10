@@ -36,6 +36,12 @@ export type ParsedInboundEvent = {
   senderIgsid: string;
   mid: string;
   text: string;
+  /**
+   * Canonical payload from a quick-reply tap or a button postback, when the
+   * inbound event carried one. The state machine routes on this first and falls
+   * back to parsing `text` for typed replies.
+   */
+  postbackPayload?: string;
 };
 
 type WebhookPayload = {
@@ -49,14 +55,26 @@ type WebhookPayload = {
         mid?: string;
         text?: string;
         is_echo?: boolean;
+        quick_reply?: { payload?: string };
+      };
+      postback?: {
+        mid?: string;
+        payload?: string;
+        title?: string;
       };
     }>;
   }>;
 };
 
 /**
- * Flatten an Instagram webhook payload into inbound text messages. Skips echoes
- * (our own outbound) and non-text events (no `message.text`).
+ * Flatten an Instagram webhook payload into inbound events. Skips echoes (our
+ * own outbound). Emits:
+ *  - plain text messages (`message.text`), as before;
+ *  - quick-reply taps (`message.quick_reply.payload`) and button postbacks
+ *    (top-level `postback.payload`) with `postbackPayload` set and `text`
+ *    populated from the title/echoed text (falling back to the payload) so
+ *    logging stays meaningful.
+ * Events with neither text nor a payload are still dropped.
  */
 export function parseInboundEvents(payload: unknown): ParsedInboundEvent[] {
   const data = payload as WebhookPayload;
@@ -67,12 +85,26 @@ export function parseInboundEvents(payload: unknown): ParsedInboundEvent[] {
     const messaging = entry.messaging ?? [];
     for (const item of messaging) {
       const message = item.message;
-      if (!message || message.is_echo) continue;
-      const text = message.text;
-      const mid = message.mid;
+      const postback = item.postback;
+      if (message?.is_echo) continue;
+
       const senderIgsid = item.sender?.id;
       const recipientIgUserId = item.recipient?.id ?? entry.id;
-      if (!text || !mid || !senderIgsid || !recipientIgUserId) continue;
+      if (!senderIgsid || !recipientIgUserId) continue;
+
+      // Prefer a quick-reply payload, then a top-level postback payload.
+      const postbackPayload = message?.quick_reply?.payload ?? postback?.payload;
+      const mid = message?.mid ?? postback?.mid;
+      if (!mid) continue;
+
+      if (postbackPayload) {
+        const text = message?.text ?? postback?.title ?? postbackPayload;
+        events.push({ recipientIgUserId, senderIgsid, mid, text, postbackPayload });
+        continue;
+      }
+
+      const text = message?.text;
+      if (!text) continue;
       events.push({ recipientIgUserId, senderIgsid, mid, text });
     }
   }

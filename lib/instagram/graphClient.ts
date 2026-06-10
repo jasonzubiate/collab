@@ -14,6 +14,7 @@ import {
   oauthRedirectUri,
   requireAppCredentials,
 } from "./config";
+import type { OutboundMessage } from "./messageContent";
 
 export class GraphApiError extends Error {
   status: number;
@@ -215,12 +216,15 @@ export async function unsubscribeWebhooks(
   if (!res.ok) throw new GraphApiError(await parseError(res), res.status);
 }
 
-/** Send a plain-text DM to a recipient IGSID using the account's token. */
-export async function sendTextMessage(
+/**
+ * POST a fully-formed message `body` to the account's `/messages` endpoint and
+ * return the new message id. Shared by `sendTextMessage` and `sendRichMessage`
+ * so error handling / token usage stay identical across send shapes.
+ */
+async function postMessage(
   accessToken: string,
   igUserId: string,
-  recipientIgsid: string,
-  text: string,
+  body: Record<string, unknown>,
 ): Promise<{ messageId: string | null }> {
   const res = await fetch(`${graphBaseUrl()}/${igUserId}/messages`, {
     method: "POST",
@@ -228,13 +232,76 @@ export async function sendTextMessage(
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify({
-      recipient: { id: recipientIgsid },
-      message: { text },
-    }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) throw new GraphApiError(await parseError(res), res.status);
 
   const data = (await res.json()) as { message_id?: string };
   return { messageId: data.message_id ?? null };
+}
+
+/** Send a plain-text DM to a recipient IGSID using the account's token. */
+export async function sendTextMessage(
+  accessToken: string,
+  igUserId: string,
+  recipientIgsid: string,
+  text: string,
+): Promise<{ messageId: string | null }> {
+  return postMessage(accessToken, igUserId, {
+    recipient: { id: recipientIgsid },
+    message: { text },
+  });
+}
+
+/**
+ * Build the Graph `message` body for a structured outbound message. Pure and
+ * exported for unit testing without network calls.
+ *
+ * Quick replies are the safe, well-supported fallback on the Instagram-Login
+ * path. Button templates (the `attachment` branch) are more fragile: their
+ * availability on Instagram-Login messaging must be re-verified against current
+ * Meta docs at build time (see config.ts note). When in doubt, prefer quick
+ * replies — `buildMessage` only emits buttons for the estimate step.
+ */
+export function buildMessageBody(content: OutboundMessage): Record<string, unknown> {
+  if (content.quickReplies?.length) {
+    return {
+      text: content.text,
+      quick_replies: content.quickReplies.map((q) => ({
+        content_type: "text",
+        title: q.title,
+        payload: q.payload,
+      })),
+    };
+  }
+  if (content.buttons?.length) {
+    return {
+      attachment: {
+        type: "template",
+        payload: {
+          template_type: "button",
+          text: content.text,
+          buttons: content.buttons,
+        },
+      },
+    };
+  }
+  return { text: content.text };
+}
+
+/**
+ * Send a structured DM (text + optional quick replies or button template).
+ * Falls back to a plain-text send when no chips/buttons are present, so the
+ * caller can pass a `{ text }`-only message safely.
+ */
+export async function sendRichMessage(
+  accessToken: string,
+  igUserId: string,
+  recipientIgsid: string,
+  content: OutboundMessage,
+): Promise<{ messageId: string | null }> {
+  return postMessage(accessToken, igUserId, {
+    recipient: { id: recipientIgsid },
+    message: buildMessageBody(content),
+  });
 }

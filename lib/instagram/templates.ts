@@ -4,6 +4,9 @@
  * The `welcome` template carries the required automation disclosure and the
  * STOP opt-out (PRD section 6). Placeholders are `{{key}}`.
  */
+import { richRepliesEnabled } from "./config";
+import { Payload } from "./messageContent";
+import type { OutboundMessage, QuickReply } from "./messageContent";
 
 export type TemplateKey =
   | "welcome"
@@ -56,4 +59,67 @@ export function usageLabel(adUsageDays: number): string {
   if (adUsageDays === 30) return "30-day paid ads";
   if (adUsageDays === 90) return "90-day paid ads";
   return "no ad usage";
+}
+
+/** Six numeric quick-reply chips ("0".."5") used by the scope questions. */
+function scopeCountChips(): QuickReply[] {
+  return Array.from({ length: 6 }, (_unused, n) => ({
+    title: String(n),
+    payload: String(n),
+  }));
+}
+
+/**
+ * Build a structured outbound message for a template: the rendered text plus
+ * the tappable quick replies / buttons appropriate for that step.
+ *
+ * Flag-gated: when `IG_RICH_REPLIES_ENABLED` is off, this returns `{ text }`
+ * only, so the channel falls back to plain-text / numeric replies and existing
+ * behavior is preserved. The payload vocabulary mirrors the text-parser inputs
+ * so the conversation service can route taps and typed replies identically.
+ */
+export function buildMessage(
+  key: TemplateKey,
+  vars: TemplateVars = {},
+): OutboundMessage {
+  const text = renderTemplate(key, vars);
+  if (!richRepliesEnabled()) return { text };
+
+  switch (key) {
+    case "welcome":
+      return {
+        text,
+        quickReplies: [{ title: "Start", payload: Payload.START }],
+      };
+    case "ask_usage":
+      return {
+        text,
+        quickReplies: [
+          { title: "None", payload: Payload.USAGE_NONE },
+          { title: "30-day", payload: Payload.USAGE_30 },
+          { title: "90-day", payload: Payload.USAGE_90 },
+        ],
+      };
+    case "estimate":
+      return {
+        text,
+        buttons: [
+          { type: "postback", title: "Submit", payload: Payload.SUBMIT },
+          { type: "postback", title: "Edit", payload: Payload.EDIT },
+        ],
+      };
+    case "ineligible":
+      return {
+        text,
+        quickReplies: [
+          { title: "Submit anyway", payload: Payload.SUBMIT_ANYWAY },
+          { title: "Stop", payload: Payload.STOP },
+        ],
+      };
+    case "ask_reels":
+    case "ask_stories":
+      return { text, quickReplies: scopeCountChips() };
+    default:
+      return { text };
+  }
 }
