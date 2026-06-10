@@ -17,6 +17,7 @@ export type TemplateKey =
   | "ask_reels"
   | "ask_stories"
   | "ask_usage"
+  | "scope_confirm"
   | "estimate"
   | "submitted_qualified"
   | "submitted_archived"
@@ -37,6 +38,8 @@ const TEMPLATES: Record<TemplateKey, string> = {
   ask_stories: "How many Stories (0–5)? Reply with a number.",
   ask_usage:
     "Usage rights: 1 = none, 2 = 30-day paid ads, 3 = 90-day paid ads.",
+  scope_confirm:
+    "Got it: {{reels}} Reels, {{stories}} Stories, {{usage}}. Reply CONFIRM to price it, or EDIT to change.",
   estimate:
     "Estimated collab rate: {{estimate}} ({{reels}} Reels, {{stories}} Stories, {{usage}}). Reply SUBMIT to send to the brand, or EDIT to change.",
   submitted_qualified:
@@ -98,6 +101,14 @@ export function buildMessage(
           { title: "None", payload: Payload.USAGE_NONE },
           { title: "30-day", payload: Payload.USAGE_30 },
           { title: "90-day", payload: Payload.USAGE_90 },
+        ],
+      };
+    case "scope_confirm":
+      return {
+        text,
+        quickReplies: [
+          { title: "Confirm", payload: Payload.CONFIRM },
+          { title: "Edit", payload: Payload.EDIT },
         ],
       };
     case "estimate":

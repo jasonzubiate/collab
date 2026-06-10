@@ -37,6 +37,8 @@ export const Payload = {
   EDIT: "EDIT",
   STOP: "STOP",
   SUBMIT_ANYWAY: "SUBMIT_ANYWAY",
+  // Phase B: confirm an LLM-parsed scope before any (deterministic) pricing runs.
+  CONFIRM: "CONFIRM",
 } as const;
 
 export type PayloadValue = (typeof Payload)[keyof typeof Payload];

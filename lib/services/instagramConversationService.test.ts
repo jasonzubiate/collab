@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * In-memory Prisma + proposalService mocks so we can drive the DM state machine
@@ -391,5 +391,167 @@ describe("DM conversation state machine", () => {
     await deliverPayload(Payload.STOP, send, "Stop");
     expect(conversation()!.state).toBe("STOPPED");
     expect(sent.at(-1)).toContain("won’t send any more automated messages");
+  });
+});
+
+describe("DM free-text scope parsing (Phase B)", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  type ParsedScope = {
+    reelsCount: number | null;
+    storiesCount: number | null;
+    adUsageDays: 0 | 30 | 90 | null;
+    confidence: number;
+    needsClarification: boolean;
+  };
+
+  const fullScope: ParsedScope = {
+    reelsCount: 2,
+    storiesCount: 1,
+    adUsageDays: 30,
+    confidence: 0.9,
+    needsClarification: false,
+  };
+
+  async function deliverParsed(
+    text: string,
+    send: ReturnType<typeof makeSender>["send"],
+    parseScope: (msg: string) => Promise<ParsedScope>,
+  ) {
+    await processInboundMessage(
+      { brandId: BRAND_ID, instagramScopedUserId: IGSID, text },
+      { send, parseScope },
+    );
+  }
+
+  async function reachScopeReels(
+    send: ReturnType<typeof makeSender>["send"],
+    parseScope: (msg: string) => Promise<ParsedScope>,
+  ) {
+    await deliverParsed("collab", send, parseScope);
+    await deliverParsed("start", send, parseScope);
+    expect(conversation()!.state).toBe("SCOPE_REELS");
+  }
+
+  it("routes a confident full free-text parse to SCOPE_CONFIRM then CONFIRM → ESTIMATE_REVIEW", async () => {
+    vi.stubEnv("IG_LLM_SCOPE_ENABLED", "1");
+    const { sent, send } = makeSender();
+    const parseScope = vi.fn(async () => fullScope);
+
+    await reachScopeReels(send, parseScope);
+
+    await deliverParsed("2 reels and a story, 30-day usage", send, parseScope);
+    expect(parseScope).toHaveBeenCalledTimes(1);
+    expect(conversation()!.state).toBe("SCOPE_CONFIRM");
+    expect(conversation()!.draftScope).toEqual({
+      reelsCount: 2,
+      storiesCount: 1,
+      adUsageDays: 30,
+    });
+    expect(conversation()!.lastParseSource).toBe("llm");
+    expect(sent.at(-1)).toContain("CONFIRM");
+
+    await deliverParsed("confirm", send, parseScope);
+    expect(conversation()!.state).toBe("ESTIMATE_REVIEW");
+    expect(estimateProposalMock).toHaveBeenCalledWith("draft_1", {
+      reelsCount: 2,
+      storiesCount: 1,
+      adUsageDays: 30,
+    });
+    expect(sent.at(-1)).toContain("$500.00");
+  });
+
+  it("supports a CONFIRM postback from SCOPE_CONFIRM", async () => {
+    vi.stubEnv("IG_LLM_SCOPE_ENABLED", "1");
+    const { send } = makeSender();
+    const parseScope = vi.fn(async () => fullScope);
+    await reachScopeReels(send, parseScope);
+    await deliverParsed("two reels and a story for 30 days", send, parseScope);
+    expect(conversation()!.state).toBe("SCOPE_CONFIRM");
+
+    await processInboundMessage(
+      {
+        brandId: BRAND_ID,
+        instagramScopedUserId: IGSID,
+        text: "Confirm",
+        postbackPayload: Payload.CONFIRM,
+      },
+      { send, parseScope },
+    );
+    expect(conversation()!.state).toBe("ESTIMATE_REVIEW");
+  });
+
+  it("EDIT from SCOPE_CONFIRM returns to the numeric SCOPE_REELS prompt", async () => {
+    vi.stubEnv("IG_LLM_SCOPE_ENABLED", "1");
+    const { sent, send } = makeSender();
+    const parseScope = vi.fn(async () => fullScope);
+    await reachScopeReels(send, parseScope);
+    await deliverParsed("2 reels and a story for 30 days", send, parseScope);
+    expect(conversation()!.state).toBe("SCOPE_CONFIRM");
+
+    await deliverParsed("edit", send, parseScope);
+    expect(conversation()!.state).toBe("SCOPE_REELS");
+    expect(sent.at(-1)).toContain("How many Reels");
+    expect(estimateProposalMock).not.toHaveBeenCalled();
+  });
+
+  it("falls back to the numeric prompt on a low-confidence parse", async () => {
+    vi.stubEnv("IG_LLM_SCOPE_ENABLED", "1");
+    const { sent, send } = makeSender();
+    const parseScope = vi.fn(async () => ({
+      reelsCount: null,
+      storiesCount: null,
+      adUsageDays: null,
+      confidence: 0,
+      needsClarification: true,
+    }));
+    await reachScopeReels(send, parseScope);
+
+    await deliverParsed("uhh maybe some stuff?", send, parseScope);
+    expect(parseScope).toHaveBeenCalledTimes(1);
+    expect(conversation()!.state).toBe("SCOPE_REELS");
+    expect(sent.at(-1)).toContain("How many Reels");
+  });
+
+  it("never prices an empty (0,0) LLM scope — falls back to numeric", async () => {
+    vi.stubEnv("IG_LLM_SCOPE_ENABLED", "1");
+    const { send } = makeSender();
+    const parseScope = vi.fn(async () => ({
+      reelsCount: 0,
+      storiesCount: 0,
+      adUsageDays: 30 as const,
+      confidence: 0.95,
+      needsClarification: false,
+    }));
+    await reachScopeReels(send, parseScope);
+
+    await deliverParsed("no reels and no stories with 30 day usage", send, parseScope);
+    // scopeSchema's empty-scope guard rejects: stay on numeric collection.
+    expect(conversation()!.state).toBe("SCOPE_REELS");
+    expect(estimateProposalMock).not.toHaveBeenCalled();
+  });
+
+  it("with the flag OFF, free text is treated numerically and the parser is never called", async () => {
+    const { sent, send } = makeSender();
+    const parseScope = vi.fn(async () => fullScope);
+    await reachScopeReels(send, parseScope);
+
+    await deliverParsed("2 reels and a story, 30-day usage", send, parseScope);
+    expect(parseScope).not.toHaveBeenCalled();
+    expect(conversation()!.state).toBe("SCOPE_REELS");
+    expect(sent.at(-1)).toContain("How many Reels");
+  });
+
+  it("with the flag ON, a bare numeric reply still uses the numeric path (no parse)", async () => {
+    vi.stubEnv("IG_LLM_SCOPE_ENABLED", "1");
+    const { send } = makeSender();
+    const parseScope = vi.fn(async () => fullScope);
+    await reachScopeReels(send, parseScope);
+
+    await deliverParsed("2", send, parseScope);
+    expect(parseScope).not.toHaveBeenCalled();
+    expect(conversation()!.state).toBe("SCOPE_STORIES");
   });
 });

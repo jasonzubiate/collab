@@ -218,6 +218,11 @@ model InstagramConversation {
   draftScope   Json? // { reelsCount, storiesCount, adUsageDays }
   draftId      String? // FK-by-id to a reused ProposalDraft row
 
+  // Phase B audit: how the last scope was captured. Slot extraction only — the
+  // LLM never prices. "llm" | "numeric"; confidence is the parser's self-report.
+  lastParseConfidence Float?
+  lastParseSource     String?
+
   // Optimistic-concurrency guard: transitions do a conditional update on version.
   version Int @default(0)
 
