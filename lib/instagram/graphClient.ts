@@ -131,6 +131,39 @@ export type IgProfile = {
   username: string | null;
 };
 
+export type IgScopedUserProfile = {
+  username: string | null;
+  name: string | null;
+  followerCount: number | null;
+};
+
+/** Resolve a DM sender's public profile from their Instagram-scoped user ID. */
+export async function fetchScopedUserProfile(
+  accessToken: string,
+  instagramScopedUserId: string,
+): Promise<IgScopedUserProfile> {
+  const params = new URLSearchParams({
+    fields: "username,name,follower_count",
+    access_token: accessToken,
+  });
+  const res = await fetch(
+    `${graphBaseUrl()}/${instagramScopedUserId}?${params.toString()}`,
+  );
+  if (!res.ok) throw new GraphApiError(await parseError(res), res.status);
+
+  const data = (await res.json()) as {
+    username?: string;
+    name?: string;
+    follower_count?: number;
+  };
+  return {
+    username: data.username ?? null,
+    name: data.name ?? null,
+    followerCount:
+      typeof data.follower_count === "number" ? data.follower_count : null,
+  };
+}
+
 /** Fetch the authenticated Instagram account's id + username. */
 export async function fetchProfile(accessToken: string): Promise<IgProfile> {
   const params = new URLSearchParams({

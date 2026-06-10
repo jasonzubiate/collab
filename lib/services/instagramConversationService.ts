@@ -20,7 +20,10 @@ import {
 import type { RequestedScope } from "@/lib/pricing/types";
 import { hasCollabIntent, isStartKeyword, isStopKeyword } from "@/lib/instagram/intent";
 import { renderTemplate, usageLabel } from "@/lib/instagram/templates";
+import { fetchScopedUserProfile } from "@/lib/instagram/graphClient";
+import { normalizeHandle } from "@/lib/instagram/identity";
 import { sendDm } from "@/lib/instagram/messagingService";
+import { getAccessToken } from "@/lib/services/instagramConnectionService";
 
 export type InstagramConversationState =
   | "IDLE"
@@ -435,9 +438,32 @@ async function runEnrichment(
 
   await send(brandId, instagramScopedUserId, renderTemplate("enriching"));
 
+  let creatorHandle: string | null = null;
+  let creatorName: string | null = null;
+  let followerCount: number | null = null;
+  const accessToken = await getAccessToken(brandId);
+  if (accessToken) {
+    try {
+      const igProfile = await fetchScopedUserProfile(
+        accessToken,
+        instagramScopedUserId,
+      );
+      creatorHandle = igProfile.username
+        ? normalizeHandle(igProfile.username)
+        : null;
+      creatorName = igProfile.name;
+      followerCount = igProfile.followerCount;
+    } catch {
+      // Fall back to pseudo-handle enrichment when profile lookup is blocked.
+    }
+  }
+
   const draft = await startDmProposalDraft({
     campaignId,
     instagramScopedUserId,
+    creatorHandle,
+    creatorName,
+    followerCount,
   });
 
   // Reload to get the bumped version for the next conditional update.

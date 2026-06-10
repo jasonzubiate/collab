@@ -9,6 +9,7 @@ import {
   formatCompactNumber,
   formatEngagementRate,
 } from "@/lib/money";
+import { isPseudoHandle } from "@/lib/instagram/identity";
 import type { AdminProposal } from "@/lib/adminTypes";
 
 function usageLabel(days: number): string {
@@ -68,9 +69,16 @@ export function ProposalDetailDrawer({
                   @{proposal.creatorHandle}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {proposal.creatorName ?? "—"} ·{" "}
-                  {proposal.creatorEmail ?? "Instagram DM"}
+                  {dmCreatorSubtitle(proposal)}
                 </p>
+                {proposal.source === "INSTAGRAM_DM" &&
+                isPseudoHandle(proposal.creatorHandle) ? (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Handle derived from Instagram user ID. New DM submissions
+                    resolve the real @username when Graph profile access is
+                    available.
+                  </p>
+                ) : null}
                 <div className="mt-2 flex flex-wrap gap-2">
                   <TierBadge tier={proposal.matchTier} />
                   <StatusBadge status={proposal.workflowStatus} />
@@ -166,6 +174,20 @@ export function ProposalDetailDrawer({
       ) : null}
     </AnimatePresence>
   );
+}
+
+function dmCreatorSubtitle(proposal: AdminProposal): string {
+  if (proposal.source !== "INSTAGRAM_DM") {
+    const name = proposal.creatorName ?? "—";
+    const contact = proposal.creatorEmail ?? "—";
+    return `${name} · ${contact}`;
+  }
+  if (proposal.creatorName && proposal.creatorEmail) {
+    return `${proposal.creatorName} · ${proposal.creatorEmail}`;
+  }
+  if (proposal.creatorName) return proposal.creatorName;
+  if (proposal.creatorEmail) return proposal.creatorEmail;
+  return "Submitted via Instagram DM";
 }
 
 function Detail({ label, value }: { label: string; value: string }) {

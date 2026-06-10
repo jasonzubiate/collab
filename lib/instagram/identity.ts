@@ -27,3 +27,7 @@ export function pseudoHandleForIgsid(igsid: string): string {
 export function isPseudoHandle(handle: string): boolean {
   return /^ig_[0-9a-z]+$/.test(handle);
 }
+
+export function normalizeHandle(handle: string): string {
+  return handle.trim().replace(/^@+/, "").toLowerCase();
+}

@@ -5,7 +5,11 @@ import { evaluateProposal } from "@/lib/pricing/evaluateProposal";
 import type { MatchTier, RequestedScope } from "@/lib/pricing/types";
 import { formatCents } from "@/lib/money";
 import { getEnrichmentProvider } from "@/lib/enrichment";
-import { pseudoHandleForIgsid } from "@/lib/instagram/identity";
+import {
+  isPseudoHandle,
+  normalizeHandle,
+  pseudoHandleForIgsid,
+} from "@/lib/instagram/identity";
 import {
   campaignToPricing,
   getActiveCampaignByBrandSlug,
@@ -106,6 +110,10 @@ export type StartDmDraftResult =
 export async function startDmProposalDraft(input: {
   campaignId: string;
   instagramScopedUserId: string;
+  /** Resolved from Graph User Profile API when available. */
+  creatorHandle?: string | null;
+  creatorName?: string | null;
+  followerCount?: number | null;
 }): Promise<StartDmDraftResult> {
   const campaign = await prisma.campaign.findUnique({
     where: { id: input.campaignId },
@@ -113,8 +121,26 @@ export async function startDmProposalDraft(input: {
   if (!campaign) return { ok: false, reason: "CAMPAIGN_NOT_FOUND" };
 
   const provider = getEnrichmentProvider();
-  const handle = pseudoHandleForIgsid(input.instagramScopedUserId);
-  const profile = await provider.enrich(handle);
+  const handle =
+    input.creatorHandle?.trim() ||
+    pseudoHandleForIgsid(input.instagramScopedUserId);
+  const normalizedHandle = normalizeHandle(handle);
+  const mockProfile = await provider.enrich(normalizedHandle);
+
+  const profile = {
+    handle: normalizedHandle,
+    followerCount: input.followerCount ?? mockProfile.followerCount,
+    engagementRate: mockProfile.engagementRate,
+    provider:
+      input.followerCount != null || input.creatorHandle
+        ? "instagram_graph"
+        : mockProfile.provider,
+    raw: {
+      ...((mockProfile.raw as Record<string, unknown> | null) ?? {}),
+      pseudoHandle: isPseudoHandle(normalizedHandle),
+      instagramScopedUserId: input.instagramScopedUserId,
+    },
+  };
 
   const pricing = campaignToPricing(campaign);
   const evaluation = evaluateProposal({
@@ -129,7 +155,7 @@ export async function startDmProposalDraft(input: {
     data: {
       campaignId: campaign.id,
       creatorHandle: profile.handle,
-      creatorName: null,
+      creatorName: input.creatorName ?? null,
       creatorEmail: null,
       followerCount: profile.followerCount,
       engagementRate: profile.engagementRate,

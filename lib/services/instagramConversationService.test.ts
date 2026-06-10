@@ -147,6 +147,10 @@ vi.mock("@/lib/services/proposalService", () => ({
   submitProposal: submitProposalMock,
 }));
 
+vi.mock("@/lib/services/instagramConnectionService", () => ({
+  getAccessToken: vi.fn(async () => null),
+}));
+
 import { processInboundMessage } from "./instagramConversationService";
 
 const BRAND_ID = "brand_1";

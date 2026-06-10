@@ -13,7 +13,7 @@ export const IG_SCOPES = [
 ] as const;
 
 export function graphApiVersion(): string {
-  return process.env.IG_GRAPH_API_VERSION ?? "v21.0";
+  return process.env.IG_GRAPH_API_VERSION ?? "v25.0";
 }
 
 export function graphBaseUrl(): string {

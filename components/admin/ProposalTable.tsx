@@ -7,6 +7,7 @@ import {
   formatCompactNumber,
   formatEngagementRate,
 } from "@/lib/money";
+import { isPseudoHandle } from "@/lib/instagram/identity";
 import type { AdminProposal } from "@/lib/adminTypes";
 
 export function ProposalTable({
@@ -86,7 +87,11 @@ export function ProposalTable({
                   <div className="text-xs text-muted-foreground">
                     {proposal.creatorName ??
                       proposal.creatorEmail ??
-                      "Instagram DM"}
+                      (proposal.source === "INSTAGRAM_DM"
+                        ? isPseudoHandle(proposal.creatorHandle)
+                          ? "DM · derived handle"
+                          : "Instagram DM"
+                        : "—")}
                   </div>
                 </Table.Cell>
                 <Table.Cell className="tabular-nums text-end text-foreground">

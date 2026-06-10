@@ -36,6 +36,7 @@ export async function POST(request: Request) {
   if (secret) {
     const signature = request.headers.get("x-hub-signature-256");
     if (!verifySignature(raw, signature, secret)) {
+      console.warn("[instagram-webhook] rejected: invalid signature");
       return new Response("Invalid signature", { status: 403 });
     }
   } else {
@@ -64,7 +65,12 @@ export async function POST(request: Request) {
       if (!markMidSeen(event.mid)) continue; // duplicate delivery
 
       const connection = await getConnectionByIgUserId(event.recipientIgUserId);
-      if (!connection) continue; // event for an account we don't manage
+      if (!connection) {
+        console.warn("[instagram-webhook] no connection for recipient", {
+          recipientIgUserId: event.recipientIgUserId,
+        });
+        continue;
+      }
 
       try {
         await processInboundMessage({
