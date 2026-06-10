@@ -51,9 +51,15 @@ export async function sendDm(
     return { ok: true, messageId };
   } catch (error) {
     if (error instanceof GraphApiError) {
+      console.error("[instagram-send] text send failed", {
+        brandId,
+        status: error.status,
+        error: error.message,
+      });
       return { ok: false, error: error.message, status: error.status };
     }
     const message = error instanceof Error ? error.message : "Send failed.";
+    console.error("[instagram-send] text send failed", { brandId, error: message });
     return { ok: false, error: message };
   }
 }
@@ -90,9 +96,20 @@ export async function sendDmRich(
     return { ok: true, messageId };
   } catch (error) {
     if (error instanceof GraphApiError) {
+      console.error("[instagram-send] rich send failed", {
+        brandId,
+        status: error.status,
+        error: error.message,
+        shape: content.quickReplies?.length
+          ? "quick_replies"
+          : content.buttons?.length
+            ? "button_template"
+            : "text",
+      });
       return { ok: false, error: error.message, status: error.status };
     }
     const message = error instanceof Error ? error.message : "Send failed.";
+    console.error("[instagram-send] rich send failed", { brandId, error: message });
     return { ok: false, error: message };
   }
 }
