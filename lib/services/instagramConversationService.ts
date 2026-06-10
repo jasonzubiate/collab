@@ -26,6 +26,10 @@ import { fetchScopedUserProfile } from "@/lib/instagram/graphClient";
 import { normalizeHandle } from "@/lib/instagram/identity";
 import { sendDmRich } from "@/lib/instagram/messagingService";
 import { getAccessToken } from "@/lib/services/instagramConnectionService";
+import { llmScopeEnabled } from "@/lib/instagram/config";
+import { getScopeParser } from "@/lib/scopeParser";
+import type { ParsedScope } from "@/lib/scopeParser";
+import { scopeSchema } from "@/lib/validation/proposalSchemas";
 
 export type InstagramConversationState =
   | "IDLE"
@@ -36,6 +40,7 @@ export type InstagramConversationState =
   | "SCOPE_REELS"
   | "SCOPE_STORIES"
   | "SCOPE_USAGE"
+  | "SCOPE_CONFIRM"
   | "ESTIMATE_REVIEW"
   | "SUBMITTING"
   | "COMPLETED"
@@ -49,6 +54,7 @@ const ACTIVE_STATES = new Set<InstagramConversationState>([
   "SCOPE_REELS",
   "SCOPE_STORIES",
   "SCOPE_USAGE",
+  "SCOPE_CONFIRM",
   "ESTIMATE_REVIEW",
   "SUBMITTING",
 ]);
@@ -70,9 +76,14 @@ export type Sender = (
   content: OutboundMessage,
 ) => Promise<unknown>;
 
+/** Free-text scope extractor. Injectable for tests; never throws (see provider). */
+export type ScopeParseFn = (message: string) => Promise<ParsedScope>;
+
 export type ProcessDeps = {
   /** Injectable for tests; defaults to the real Graph send. */
   send?: Sender;
+  /** Injectable for tests; defaults to the configured scope-parser provider. */
+  parseScope?: ScopeParseFn;
 };
 
 type DraftScope = Partial<RequestedScope>;
@@ -119,6 +130,8 @@ function interpret(
       return "submit";
     case Payload.EDIT:
       return "edit";
+    case Payload.CONFIRM:
+      return "confirm";
     default:
       // Numeric scope payloads ("0".."5") pass through as the count string.
       return /^[0-5]$/.test(postbackPayload) ? postbackPayload : text;
@@ -150,6 +163,8 @@ export async function processInboundMessage(
   deps: ProcessDeps = {},
 ): Promise<void> {
   const send: Sender = deps.send ?? ((b, u, c) => sendDmRich(b, u, c));
+  const parseScope: ScopeParseFn =
+    deps.parseScope ?? ((m) => getScopeParser().parse(m));
   const { brandId, instagramScopedUserId, text, postbackPayload } = event;
 
   const existing = await prisma.instagramConversation.findFirst({
@@ -178,7 +193,7 @@ export async function processInboundMessage(
 
   // Mid-flow: route the reply to the state machine.
   if (isActive) {
-    await advance(existing!, state, effectiveText, send);
+    await advance(existing!, state, effectiveText, send, parseScope);
     return;
   }
 
@@ -263,6 +278,7 @@ async function advance(
   state: InstagramConversationState,
   text: string,
   send: Sender,
+  parseScope: ScopeParseFn,
 ): Promise<void> {
   const { brandId, instagramScopedUserId } = conversation;
   const now = new Date();
@@ -304,6 +320,21 @@ async function advance(
     }
 
     case "SCOPE_REELS": {
+      // Phase B (opt-in): if the reply is free-form (NOT a bare 0-5 number and
+      // NOT a known postback payload, which `interpret()` would have collapsed
+      // to a token), attempt an LLM free-text parse. A confident, full, valid
+      // scope jumps to SCOPE_CONFIRM; anything else falls through to the
+      // deterministic numeric prompt below so the creator is never blocked.
+      if (llmScopeEnabled() && parseScopeCount(text) === null) {
+        const handled = await tryFreeTextScope(
+          conversation,
+          text,
+          send,
+          parseScope,
+        );
+        if (handled) return;
+      }
+
       const reels = parseScopeCount(text);
       if (reels === null) {
         await send(
@@ -320,6 +351,7 @@ async function advance(
         state: "SCOPE_STORIES",
         draftScope: scope,
         lastInboundAt: now,
+        lastParseSource: "numeric",
       });
       if (won) {
         await send(brandId, instagramScopedUserId, buildMessage("ask_stories"));
@@ -388,39 +420,57 @@ async function advance(
         adUsageDays: usage,
       };
 
-      if (!conversation.draftId) {
-        await send(
-          brandId,
-          instagramScopedUserId,
-          buildMessage("session_expired"),
-        );
+      await runEstimate(conversation, scope, send);
+      return;
+    }
+
+    case "SCOPE_CONFIRM": {
+      const choice = text.trim().toLowerCase();
+      if (choice === "edit") {
+        const won = await applyTransition(conversation, {
+          state: "SCOPE_REELS",
+          draftScope: {},
+          lastInboundAt: now,
+        });
+        if (won) {
+          await send(brandId, instagramScopedUserId, buildMessage("ask_reels"));
+        }
         return;
       }
-
-      const estimate = await estimateProposal(conversation.draftId, scope);
-      if (!estimate.ok) {
-        await send(
-          brandId,
-          instagramScopedUserId,
-          buildMessage("session_expired"),
-        );
+      if (choice === "confirm") {
+        // The scope was already validated by scopeSchema before we stored it;
+        // runEstimate re-validates it once more before any pricing call.
+        const scope = conversation.draftScope as RequestedScope | null;
+        if (!scope) {
+          await send(
+            brandId,
+            instagramScopedUserId,
+            buildMessage("session_expired"),
+          );
+          return;
+        }
+        await runEstimate(conversation, scope, send);
         return;
       }
-
-      const won = await applyTransition(conversation, {
-        state: "ESTIMATE_REVIEW",
-        draftScope: scope,
-        lastInboundAt: now,
-      });
-      if (won) {
+      // Anything else: re-echo the parsed scope and ask to confirm (STOP is
+      // handled upstream). Never advance on an ambiguous reply.
+      const scope = conversation.draftScope as RequestedScope | null;
+      if (scope) {
         await send(
           brandId,
           instagramScopedUserId,
-          buildMessage("estimate", {
-            estimate: estimate.formattedPayout,
+          buildMessage("scope_confirm", {
             reels: scope.reelsCount,
             stories: scope.storiesCount,
             usage: usageLabel(scope.adUsageDays),
+          }),
+        );
+      } else {
+        await send(
+          brandId,
+          instagramScopedUserId,
+          buildMessage("invalid_input", {
+            hint: "Reply CONFIRM to price it, or EDIT to change.",
           }),
         );
       }
@@ -458,6 +508,126 @@ async function advance(
       // ENRICHING / SUBMITTING are transient; ignore stray input.
       return;
   }
+}
+
+/**
+ * Run the deterministic estimate for a fully-specified scope and advance to
+ * ESTIMATE_REVIEW. This is the SINGLE money path for both the numeric flow and
+ * the LLM-confirmed flow: the scope is re-validated by the app's `scopeSchema`
+ * (the final authority — not the parser's own schema) before `estimateProposal`
+ * is called, and all pricing stays inside `lib/pricing/*`.
+ */
+async function runEstimate(
+  conversation: InstagramConversation,
+  scope: RequestedScope,
+  send: Sender,
+): Promise<void> {
+  const { brandId, instagramScopedUserId } = conversation;
+  const now = new Date();
+
+  if (!conversation.draftId) {
+    await send(brandId, instagramScopedUserId, buildMessage("session_expired"));
+    return;
+  }
+
+  // Final, authoritative validation (incl. the reels+stories>=1 empty-scope
+  // guard) before any pricing. An LLM can never bypass this.
+  const validated = scopeSchema.safeParse(scope);
+  if (!validated.success) {
+    await send(
+      brandId,
+      instagramScopedUserId,
+      buildMessage("invalid_input", {
+        hint: "How many Reels (0–5)? Reply with a number.",
+      }),
+    );
+    return;
+  }
+  const safeScope = validated.data;
+
+  const estimate = await estimateProposal(conversation.draftId, safeScope);
+  if (!estimate.ok) {
+    await send(brandId, instagramScopedUserId, buildMessage("session_expired"));
+    return;
+  }
+
+  const won = await applyTransition(conversation, {
+    state: "ESTIMATE_REVIEW",
+    draftScope: safeScope,
+    lastInboundAt: now,
+  });
+  if (won) {
+    await send(
+      brandId,
+      instagramScopedUserId,
+      buildMessage("estimate", {
+        estimate: estimate.formattedPayout,
+        reels: safeScope.reelsCount,
+        stories: safeScope.storiesCount,
+        usage: usageLabel(safeScope.adUsageDays),
+      }),
+    );
+  }
+}
+
+/**
+ * Phase B LLM alternate path. Attempts to extract a full scope from free text.
+ * Returns true only when it has handled the message (transitioned to
+ * SCOPE_CONFIRM, or lost the optimistic-concurrency race). Returns false when
+ * the parse is low-confidence/partial/invalid so the caller falls back to the
+ * deterministic numeric prompt — the creator is never blocked by a bad parse.
+ *
+ * The parser ONLY extracts slots; it computes no money. The candidate scope is
+ * re-validated by `scopeSchema` here before we even echo it for confirmation,
+ * and again by `runEstimate` before pricing.
+ */
+async function tryFreeTextScope(
+  conversation: InstagramConversation,
+  text: string,
+  send: Sender,
+  parseScope: ScopeParseFn,
+): Promise<boolean> {
+  const { brandId, instagramScopedUserId } = conversation;
+  const parsed = await parseScope(text);
+
+  // Require a confident, complete extraction before we trust it enough to echo.
+  if (parsed.needsClarification || parsed.confidence < 0.8) return false;
+  if (
+    parsed.reelsCount === null ||
+    parsed.storiesCount === null ||
+    parsed.adUsageDays === null
+  ) {
+    return false;
+  }
+
+  const validated = scopeSchema.safeParse({
+    reelsCount: parsed.reelsCount,
+    storiesCount: parsed.storiesCount,
+    adUsageDays: parsed.adUsageDays,
+  });
+  // Fails the empty-scope guard / range checks → fall back to numeric prompts.
+  if (!validated.success) return false;
+  const safeScope = validated.data;
+
+  const won = await applyTransition(conversation, {
+    state: "SCOPE_CONFIRM",
+    draftScope: safeScope,
+    lastInboundAt: new Date(),
+    lastParseConfidence: parsed.confidence,
+    lastParseSource: "llm",
+  });
+  if (won) {
+    await send(
+      brandId,
+      instagramScopedUserId,
+      buildMessage("scope_confirm", {
+        reels: safeScope.reelsCount,
+        stories: safeScope.storiesCount,
+        usage: usageLabel(safeScope.adUsageDays),
+      }),
+    );
+  }
+  return true;
 }
 
 /** WELCOME → enrich (synchronous mock) → SCOPE_REELS or INELIGIBLE_OFFER. */

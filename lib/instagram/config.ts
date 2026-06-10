@@ -59,6 +59,46 @@ export function richRepliesEnabled(): boolean {
 }
 
 /**
+ * Phase B feature flag: free-text scope parsing via an LLM. Off by default so
+ * the numeric slot-filling flow is unchanged until explicitly enabled. Truthy
+ * values: "1" or "true".
+ */
+export function llmScopeEnabled(): boolean {
+  const value = process.env.IG_LLM_SCOPE_ENABLED;
+  return value === "1" || value === "true";
+}
+
+/**
+ * Which scope-parser provider to use: "mock" (default, deterministic/offline)
+ * or "llm" (the OpenAI-compatible HTTP provider). Mirrors enrichment provider
+ * selection.
+ */
+export function scopeParserProvider(): string {
+  return process.env.SCOPE_PARSER_PROVIDER ?? "mock";
+}
+
+/** API key for the OpenAI-compatible chat-completions endpoint (LLM provider). */
+export function llmApiKey(): string | undefined {
+  return process.env.LLM_API_KEY;
+}
+
+/** Base URL for the OpenAI-compatible endpoint, e.g. https://api.openai.com/v1. */
+export function llmApiBaseUrl(): string {
+  return process.env.LLM_API_BASE_URL ?? "https://api.openai.com/v1";
+}
+
+/** Model identifier passed to the chat-completions endpoint. */
+export function llmModel(): string {
+  return process.env.LLM_MODEL ?? "gpt-4o-mini";
+}
+
+/** Hard timeout (ms) for an LLM request before we abort and fall back. */
+export function llmTimeoutMs(): number {
+  const raw = Number(process.env.LLM_TIMEOUT_MS);
+  return Number.isFinite(raw) && raw > 0 ? raw : 4000;
+}
+
+/**
  * Returns the configured Meta app credentials, throwing if missing. Callers in
  * route handlers should catch and surface a clear "Instagram is not configured"
  * error rather than a 500.
