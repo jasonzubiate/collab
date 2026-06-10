@@ -77,19 +77,18 @@ export function scopeParserProvider(): string {
   return process.env.SCOPE_PARSER_PROVIDER ?? "mock";
 }
 
-/** API key for the OpenAI-compatible chat-completions endpoint (LLM provider). */
+/** Vercel AI Gateway — OpenAI-compatible chat-completions endpoint. */
+export const LLM_API_BASE_URL = "https://ai-gateway.vercel.sh/v1";
+
+/**
+ * Scope-parser model via AI Gateway. gpt-4o-mini: fast, cheap, reliable JSON
+ * mode for simple slot extraction under the DM timeout budget.
+ */
+export const LLM_MODEL = "openai/gpt-4o-mini";
+
+/** Vercel AI Gateway API key for the scope-parser LLM provider. */
 export function llmApiKey(): string | undefined {
   return process.env.LLM_API_KEY;
-}
-
-/** Base URL for the OpenAI-compatible endpoint, e.g. https://api.openai.com/v1. */
-export function llmApiBaseUrl(): string {
-  return process.env.LLM_API_BASE_URL ?? "https://api.openai.com/v1";
-}
-
-/** Model identifier passed to the chat-completions endpoint. */
-export function llmModel(): string {
-  return process.env.LLM_MODEL ?? "gpt-4o-mini";
 }
 
 /** Hard timeout (ms) for an LLM request before we abort and fall back. */

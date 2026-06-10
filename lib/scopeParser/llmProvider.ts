@@ -12,9 +12,9 @@
  *   it returns `UNPARSEABLE_SCOPE` so the caller falls back to numeric prompts.
  */
 import {
-  llmApiBaseUrl,
+  LLM_API_BASE_URL,
+  LLM_MODEL,
   llmApiKey,
-  llmModel,
   llmTimeoutMs,
 } from "@/lib/instagram/config";
 import { parseLlmResponse, UNPARSEABLE_SCOPE } from "./schema";
@@ -55,14 +55,14 @@ export class LlmScopeParser implements ScopeParserProvider {
     const timer = setTimeout(() => controller.abort(), llmTimeoutMs());
 
     try {
-      const response = await fetch(`${llmApiBaseUrl()}/chat/completions`, {
+      const response = await fetch(`${LLM_API_BASE_URL}/chat/completions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: llmModel(),
+          model: LLM_MODEL,
           temperature: 0,
           response_format: { type: "json_object" },
           messages: [
