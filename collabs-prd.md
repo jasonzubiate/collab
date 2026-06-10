@@ -831,48 +831,48 @@ prisma/
 
 ### Phase 1: Project Foundation
 
-- Initialize Next.js app with TypeScript, Tailwind, Prisma, PostgreSQL, and Auth.js.
-- Add Prisma schema and migrations.
-- Add seed data for one brand, one admin, and one active campaign.
-- Create shared Prisma client and auth helpers.
+- [x] Initialize Next.js app with TypeScript, Tailwind, Prisma, PostgreSQL, and Auth.js.
+- [x] Add Prisma schema and migrations.
+- [x] Add seed data for one brand, one admin, and one active campaign.
+- [x] Create shared Prisma client and auth helpers.
 
 ### Phase 2: Pricing and Enrichment Engine
 
-- Implement mock enrichment provider.
-- Implement gatekeeper evaluation helper.
-- Implement payout calculation helper.
-- Add unit tests for payout and tier logic.
+- [x] Implement mock enrichment provider.
+- [x] Implement gatekeeper evaluation helper.
+- [x] Implement payout calculation helper.
+- [x] Add unit tests for payout and tier logic.
 
 ### Phase 3: Public Intake
 
-- Build `/apply/[brandSlug]`.
-- Implement start, estimate, and submit routes.
-- Add creator scope sliders and usage selector.
-- Show estimated payout before submit.
-- Add confirmation and archived/not-fit states.
+- [x] Build `/apply/[brandSlug]`.
+- [x] Implement start, estimate, and submit routes.
+- [x] Add creator scope sliders and usage selector.
+- [x] Show estimated payout before submit.
+- [x] Add confirmation and archived/not-fit states.
 
 ### Phase 4: Admin Dashboard
 
-- Build login.
-- Build proposals dashboard.
-- Add filters, tabs, detail drawer, and action menu.
-- Implement approve, reject, email, mark contacted, manual status update, and CSV export.
+- [x] Build login.
+- [x] Build proposals dashboard.
+- [x] Add filters, tabs, detail drawer, and action menu.
+- [x] Implement approve, reject, email, mark contacted, manual status update, and CSV export.
 
 ### Phase 5: Campaign Management
 
-- Build campaign list and campaign form.
-- Implement create/edit/activate behavior.
-- Enforce one active campaign per brand.
+- [x] Build campaign list and campaign form.
+- [x] Implement create/edit/activate behavior.
+- [x] Enforce one active campaign per brand.
 
 ### Phase 6: QA and Hardening
 
-- Add Playwright tests for:
-  - Creator estimate and submit flow
-  - Admin login
-  - Proposal action workflow
-  - Campaign activation
-- Add loading, empty, and error states.
-- Verify responsive layouts.
+- [ ] Add Playwright tests for:
+  - [ ] Creator estimate and submit flow
+  - [ ] Admin login
+  - [ ] Proposal action workflow
+  - [ ] Campaign activation
+- [x] Add loading, empty, and error states.
+- [x] Verify responsive layouts.
 
 ## 18. Testing Requirements
 
@@ -936,19 +936,19 @@ Create seed data:
 
 The MVP is complete when:
 
-- A brand admin can log in.
-- The admin can create multiple campaigns and set exactly one active campaign.
-- A creator can open the active campaign intake page.
-- A creator can enter handle, name, and email.
-- The system mocks enrichment and stores a proposal draft.
-- A creator can build scope with sliders and usage selector.
-- The creator sees an estimated payout before submitting.
-- Final submission saves the proposal with matching payout.
-- Proposals are assigned Green, Yellow, or Archived match tiers.
-- Admin can review proposals by tier and workflow status.
-- Admin can approve, reject, email, export, mark contacted, and change status.
-- Pricing logic is covered by unit tests.
-- Public and admin routes validate inputs server-side.
+- [x] A brand admin can log in.
+- [x] The admin can create multiple campaigns and set exactly one active campaign.
+- [x] A creator can open the active campaign intake page.
+- [x] A creator can enter handle, name, and email.
+- [x] The system mocks enrichment and stores a proposal draft.
+- [x] A creator can build scope with sliders and usage selector.
+- [x] The creator sees an estimated payout before submitting.
+- [x] Final submission saves the proposal with matching payout.
+- [x] Proposals are assigned Green, Yellow, or Archived match tiers.
+- [x] Admin can review proposals by tier and workflow status.
+- [x] Admin can approve, reject, email, export, mark contacted, and change status.
+- [x] Pricing logic is covered by unit tests.
+- [x] Public and admin routes validate inputs server-side.
 
 ## 21. Future Roadmap
 

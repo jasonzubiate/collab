@@ -422,34 +422,34 @@ Before App Review + Business Verification clear, **only people with a role on th
 
 ### Phase 0 — Foundation (week 1)
 
-- [ ] Meta Developer app created (dev mode)  
-- [ ] Webhook endpoint + verification  
-- [ ] `InstagramConnection` model + encrypt tokens  
-- [ ] Admin “Connect Instagram” UI (staging)  
+- [x] Meta Developer app created (dev mode)  
+- [x] Webhook endpoint + verification  
+- [x] `InstagramConnection` model + encrypt tokens  
+- [x] Admin “Connect Instagram” UI (staging)  
 - [ ] Log inbound messages only (no auto-reply)
 
 ### Phase 1 — Intent + state machine (week 1–2)
 
-- [ ] Keyword intent service  
-- [ ] `InstagramConversation` state machine  
-- [ ] Template outbound messages (hardcoded)  
-- [ ] Pseudo-handle + mock enrich + gatekeeper in DM  
-- [ ] Scope collection messages → estimate → submit → `Proposal` with `INSTAGRAM_DM`  
-- [ ] Post-submit summary DM  
+- [x] Keyword intent service  
+- [x] `InstagramConversation` state machine  
+- [x] Template outbound messages (hardcoded)  
+- [x] Pseudo-handle + mock enrich + gatekeeper in DM  
+- [x] Scope collection messages → estimate → submit → `Proposal` with `INSTAGRAM_DM`  
+- [x] Post-submit summary DM  
 
 ### Phase 2 — Admin integration (week 2–3)
 
-- [ ] Proposals list/detail: source badge, IGSID, “Open in Instagram” deep link if available  
-- [ ] Nullable email; DM reply action from dashboard  
+- [x] Proposals list/detail: source badge, IGSID, “Open in Instagram” deep link if available  
+- [x] Nullable email; DM reply action from dashboard  
 - [ ] Proposal events for DM sent/received  
-- [ ] CSV export includes `source`, `instagramScopedUserId`  
+- [x] CSV export includes `source`, `instagramScopedUserId`  
 
 ### Phase 3 — Production readiness (week 3+)
 
 - [ ] App Review submission + privacy policy + data deletion instructions  
 - [ ] Token refresh + connection health monitoring  
 - [ ] Idempotency, dead-letter for failed sends  
-- [ ] Graph username resolution (replace pseudo-handle) when approved  
+- [x] Graph username resolution (replace pseudo-handle) when approved  
 
 ### Phase 4 — Polish (later)
 
@@ -537,15 +537,15 @@ Placeholders: `{{brandName}}`, `{{campaignName}}`, `{{estimate}}`, `{{minFollowe
 
 ## 18. Acceptance criteria (channel MVP done)
 
-- [ ] Brand connects Instagram via admin UI; webhook receives messages.  
-- [ ] Creator DM containing trigger word starts automated flow without web link.  
-- [ ] Creator completes scope in DM and receives server-calculated estimate before submit.  
-- [ ] Proposal created with `source = INSTAGRAM_DM`, `instagramScopedUserId`, tier per existing rules.  
-- [ ] Creator receives post-submit summary DM with estimate.  
-- [ ] Admin sees proposal in dashboard with DM source indicator.  
-- [ ] Admin can send a reply from dashboard that delivers to creator DM (within policy window).  
-- [ ] Mock enrichment used; pricing matches web path for equivalent inputs.  
-- [ ] Core web intake at `/apply/[brandSlug]` still works unchanged.
+- [x] Brand connects Instagram via admin UI; webhook receives messages.  
+- [x] Creator DM containing trigger word starts automated flow without web link.  
+- [x] Creator completes scope in DM and receives server-calculated estimate before submit.  
+- [x] Proposal created with `source = INSTAGRAM_DM`, `instagramScopedUserId`, tier per existing rules.  
+- [x] Creator receives post-submit summary DM with estimate.  
+- [x] Admin sees proposal in dashboard with DM source indicator.  
+- [x] Admin can send a reply from dashboard that delivers to creator DM (within policy window).  
+- [x] Mock enrichment used; pricing matches web path for equivalent inputs.  
+- [x] Core web intake at `/apply/[brandSlug]` still works unchanged.
 
 ---
 
