@@ -1,4 +1,5 @@
-import type { CampaignPricing, RequestedScope, UsageDays } from "./types";
+import type { CampaignPricing, RequestedScope } from "./types";
+import { usageMultiplier } from "./usageMultiplier";
 
 type CalculatePayoutInput = {
   pricing: Pick<
@@ -12,18 +13,6 @@ type CalculatePayoutInput = {
   followerCount: number;
   scope: RequestedScope;
 };
-
-function usageMultiplier(
-  adUsageDays: UsageDays,
-  pricing: Pick<
-    CampaignPricing,
-    "adUsage30DayMultiplier" | "adUsage90DayMultiplier"
-  >,
-): number {
-  if (adUsageDays === 30) return pricing.adUsage30DayMultiplier;
-  if (adUsageDays === 90) return pricing.adUsage90DayMultiplier;
-  return 1;
-}
 
 /**
  * Pure payout calculation. Works in fractional cents internally and rounds to

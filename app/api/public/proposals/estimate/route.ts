@@ -26,6 +26,8 @@ export async function POST(request: Request) {
   return jsonOk({
     calculatedPayoutCents: result.calculatedPayoutCents,
     formattedPayout: result.formattedPayout,
+    breakdown: result.breakdown,
+    formattedBreakdown: result.formattedBreakdown,
     matchTier: result.matchTier,
   });
 }

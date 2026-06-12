@@ -5,12 +5,14 @@ import { cn } from "@/lib/cn";
 
 type EstimatedPayoutPanelProps = {
   formattedPayout: string | null;
+  formattedBreakdown: string | null;
   loading: boolean;
   hasDeliverable: boolean;
 };
 
 export function EstimatedPayoutPanel({
   formattedPayout,
+  formattedBreakdown,
   loading,
   hasDeliverable,
 }: EstimatedPayoutPanelProps) {
@@ -34,15 +36,20 @@ export function EstimatedPayoutPanel({
             Select at least one reel or story.
           </p>
         ) : (
-          <motion.span
-            key={formattedPayout ?? "loading"}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
-            className="tabular-nums text-4xl font-semibold"
-          >
-            {formattedPayout ?? "—"}
-          </motion.span>
+          <>
+            <motion.span
+              key={formattedPayout ?? "loading"}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              className="tabular-nums text-4xl font-semibold"
+            >
+              {formattedPayout ?? "—"}
+            </motion.span>
+            {!loading && formattedBreakdown ? (
+              <p className="mt-2 text-xs text-white/50">{formattedBreakdown}</p>
+            ) : null}
+          </>
         )}
       </div>
       <p className="mt-1 text-xs text-white/50">

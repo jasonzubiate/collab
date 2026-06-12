@@ -38,6 +38,8 @@ export async function POST(request: Request) {
     proposalId: result.proposalId,
     calculatedPayoutCents: result.calculatedPayoutCents,
     formattedPayout: result.formattedPayout,
+    breakdown: result.breakdown,
+    formattedBreakdown: result.formattedBreakdown,
     matchTier: result.matchTier,
   });
 }

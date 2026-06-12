@@ -9,6 +9,11 @@ import { UsageRightsSelector } from "./UsageRightsSelector";
 import { EstimatedPayoutPanel } from "./EstimatedPayoutPanel";
 import type { PublicCampaign } from "@/lib/services/campaignService";
 import { formatCompactNumber } from "@/lib/money";
+import {
+  buildIneligibleCopyFragments,
+  computeEligibilityGaps,
+  formatIneligibleMessage,
+} from "@/lib/pricing/computeEligibilityGaps";
 
 type Step = "handle" | "evaluating" | "ineligible" | "scope" | "done";
 type UsageDays = 0 | 30 | 90;
@@ -56,9 +61,11 @@ export function CreatorIntakeForm({
   const [adUsageDays, setAdUsageDays] = useState<UsageDays>(0);
 
   const [estimate, setEstimate] = useState<string | null>(null);
+  const [estimateBreakdown, setEstimateBreakdown] = useState<string | null>(null);
   const [estimateLoading, setEstimateLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [finalPayout, setFinalPayout] = useState<string | null>(null);
+  const [finalBreakdown, setFinalBreakdown] = useState<string | null>(null);
 
   const hasDeliverable = reelsCount + storiesCount >= 1;
 
@@ -120,6 +127,7 @@ export function CreatorIntakeForm({
   const fetchEstimate = useCallback(async () => {
     if (!draftId || !hasDeliverable) {
       setEstimate(null);
+      setEstimateBreakdown(null);
       return;
     }
     abortRef.current?.abort();
@@ -137,7 +145,10 @@ export function CreatorIntakeForm({
         signal: controller.signal,
       });
       const data = await res.json();
-      if (res.ok) setEstimate(data.formattedPayout);
+      if (res.ok) {
+        setEstimate(data.formattedPayout);
+        setEstimateBreakdown(data.formattedBreakdown ?? null);
+      }
     } catch (err) {
       if ((err as Error).name !== "AbortError") setEstimate(null);
     } finally {
@@ -166,6 +177,7 @@ export function CreatorIntakeForm({
       const data = await res.json();
       if (res.ok) {
         setFinalPayout(data.formattedPayout);
+        setFinalBreakdown(data.formattedBreakdown ?? null);
         setStep("done");
       } else {
         setStartError(data.error ?? "Could not submit. Please try again.");
@@ -217,10 +229,11 @@ export function CreatorIntakeForm({
 
               {step === "evaluating" && <EvaluatingStep />}
 
-              {step === "ineligible" && gatekeeper && (
+              {step === "ineligible" && gatekeeper && metrics && (
                 <IneligibleStep
                   gatekeeper={gatekeeper}
                   campaign={campaign}
+                  metrics={metrics}
                   onContinue={() => setStep("scope")}
                   onRestart={() => setStep("handle")}
                 />
@@ -228,6 +241,14 @@ export function CreatorIntakeForm({
 
               {step === "scope" && (
                 <section className="space-y-4">
+                  {metrics && (
+                    <p className="text-sm text-muted-foreground">
+                      Estimate for @
+                      {handle.trim().replace(/^@+/, "")} (
+                      {formatCompactNumber(metrics.followerCount)} followers)
+                    </p>
+                  )}
+
                   {metrics && (
                     <div className="flex items-center gap-4 rounded-xl border border-border bg-surface px-4 py-3">
                       <Metric
@@ -267,6 +288,7 @@ export function CreatorIntakeForm({
 
                   <EstimatedPayoutPanel
                     formattedPayout={estimate}
+                    formattedBreakdown={estimateBreakdown}
                     loading={estimateLoading}
                     hasDeliverable={hasDeliverable}
                   />
@@ -291,6 +313,7 @@ export function CreatorIntakeForm({
               {step === "done" && (
                 <DoneStep
                   payout={finalPayout}
+                  breakdown={finalBreakdown}
                   eligible={gatekeeper?.passedThresholds ?? false}
                   creatorName={name.trim() || handle}
                 />
@@ -452,14 +475,32 @@ function EvaluatingStep() {
 function IneligibleStep({
   gatekeeper,
   campaign,
+  metrics,
   onContinue,
   onRestart,
 }: {
   gatekeeper: Gatekeeper;
   campaign: PublicCampaign;
+  metrics: { followerCount: number; engagementRate: number };
   onContinue: () => void;
   onRestart: () => void;
 }) {
+  const gaps = computeEligibilityGaps({
+    failedFollowerThreshold: gatekeeper.failedFollowerThreshold,
+    failedEngagementThreshold: gatekeeper.failedEngagementThreshold,
+    metrics,
+    minFollowers: campaign.minFollowers,
+    minEngagementRate: campaign.minEngagementRate,
+  });
+  const fragments = buildIneligibleCopyFragments(gaps, metrics, {
+    minFollowers: campaign.minFollowers,
+    minEngagementRate: campaign.minEngagementRate,
+  });
+  const message = formatIneligibleMessage(gaps, {
+    ...fragments,
+    campaignName: campaign.name,
+  });
+
   return (
     <section className="space-y-5">
       <div className="rounded-2xl border border-border bg-surface p-6 text-center">
@@ -469,11 +510,9 @@ function IneligibleStep({
         <h2 className="mt-4 text-lg font-semibold text-foreground">
           Not a fit right now
         </h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {gatekeeper.failedFollowerThreshold
-            ? `This campaign is looking for creators with at least ${campaign.minFollowers.toLocaleString()} followers.`
-            : `This campaign is looking for an engagement rate of at least ${campaign.minEngagementRate.toFixed(1)}%.`}{" "}
-          You can still send your details for the brand to keep on file.
+        <p className="mt-2 text-sm text-muted-foreground">{message}</p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Engagement is estimated for this preview.
         </p>
       </div>
       <Button size="lg" variant="secondary" className="w-full" onClick={onContinue}>
@@ -488,10 +527,12 @@ function IneligibleStep({
 
 function DoneStep({
   payout,
+  breakdown,
   eligible,
   creatorName,
 }: {
   payout: string | null;
+  breakdown: string | null;
   eligible: boolean;
   creatorName: string;
 }) {
@@ -519,6 +560,9 @@ function DoneStep({
             Suggested rate
           </span>
           <p className="tabular-nums mt-1 text-3xl font-semibold">{payout}</p>
+          {breakdown ? (
+            <p className="mt-2 text-xs text-white/50">{breakdown}</p>
+          ) : null}
         </div>
       ) : null}
     </section>

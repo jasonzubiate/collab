@@ -20,6 +20,11 @@ import {
 import type { RequestedScope } from "@/lib/pricing/types";
 import { hasCollabIntent, isStartKeyword, isStopKeyword } from "@/lib/instagram/intent";
 import { buildMessage, usageLabel } from "@/lib/instagram/templates";
+import {
+  buildCreatorIdentityVars,
+  buildIdentityVarsFromDraftMetrics,
+  type DraftMetricsSnapshot,
+} from "@/lib/instagram/templateVars";
 import { Payload } from "@/lib/instagram/messageContent";
 import type { OutboundMessage } from "@/lib/instagram/messageContent";
 import { fetchScopedUserProfile } from "@/lib/instagram/graphClient";
@@ -87,6 +92,13 @@ export type ProcessDeps = {
 };
 
 type DraftScope = Partial<RequestedScope>;
+
+function askReelsMessage(conversation: InstagramConversation): OutboundMessage {
+  const identity = buildIdentityVarsFromDraftMetrics(
+    conversation.draftMetrics as DraftMetricsSnapshot | null,
+  );
+  return buildMessage("ask_reels", { creatorGreeting: identity.creatorGreeting });
+}
 
 function parseScopeCount(text: string): number | null {
   const trimmed = text.trim();
@@ -304,7 +316,7 @@ async function advance(
           lastInboundAt: now,
         });
         if (won) {
-          await send(brandId, instagramScopedUserId, buildMessage("ask_reels"));
+          await send(brandId, instagramScopedUserId, askReelsMessage(conversation));
         }
         return;
       }
@@ -433,7 +445,7 @@ async function advance(
           lastInboundAt: now,
         });
         if (won) {
-          await send(brandId, instagramScopedUserId, buildMessage("ask_reels"));
+          await send(brandId, instagramScopedUserId, askReelsMessage(conversation));
         }
         return;
       }
@@ -486,7 +498,7 @@ async function advance(
           lastInboundAt: now,
         });
         if (won) {
-          await send(brandId, instagramScopedUserId, buildMessage("ask_reels"));
+          await send(brandId, instagramScopedUserId, askReelsMessage(conversation));
         }
         return;
       }
@@ -545,6 +557,11 @@ async function runEstimate(
   }
   const safeScope = validated.data;
 
+  const campaign = await prisma.campaign.findUnique({
+    where: { id: conversation.campaignId },
+    include: { brand: true },
+  });
+
   const estimate = await estimateProposal(conversation.draftId, safeScope);
   if (!estimate.ok) {
     await send(brandId, instagramScopedUserId, buildMessage("session_expired"));
@@ -561,10 +578,13 @@ async function runEstimate(
       brandId,
       instagramScopedUserId,
       buildMessage("estimate", {
+        breakdown: estimate.formattedBreakdown,
         estimate: estimate.formattedPayout,
-        reels: safeScope.reelsCount,
-        stories: safeScope.storiesCount,
-        usage: usageLabel(safeScope.adUsageDays),
+        campaignName: campaign?.name ?? "this campaign",
+        brandName: campaign?.brand?.companyName ?? "the brand",
+        ...buildIdentityVarsFromDraftMetrics(
+          conversation.draftMetrics as DraftMetricsSnapshot | null,
+        ),
       }),
     );
   }
@@ -686,17 +706,34 @@ async function runEnrichment(
     return;
   }
 
+  const graphResolved = creatorHandle != null || followerCount != null;
+  const enrichmentProvider = graphResolved ? "instagram_graph" : "mock";
+  const identityVars = buildCreatorIdentityVars({
+    creatorHandle: draft.creatorHandle,
+    enrichmentProvider,
+    followerCount: draft.metrics.followerCount,
+  });
+  const draftMetrics: DraftMetricsSnapshot = {
+    followerCount: draft.metrics.followerCount,
+    engagementRate: draft.metrics.engagementRate,
+    creatorHandle: draft.creatorHandle,
+    isVerifiedIdentity: identityVars.isVerifiedIdentity,
+    enrichmentProvider,
+  };
+
   const campaign = await prisma.campaign.findUnique({ where: { id: campaignId } });
 
   if (draft.gatekeeper.passedThresholds) {
     const won = await applyTransition(current, {
       state: "SCOPE_REELS",
       draftId: draft.draftId,
-      draftMetrics: draft.metrics,
+      draftMetrics,
       draftScope: {},
     });
     if (won) {
-      await send(brandId, instagramScopedUserId, buildMessage("ask_reels"));
+      await send(brandId, instagramScopedUserId, buildMessage("ask_reels", {
+        creatorGreeting: identityVars.creatorGreeting,
+      }));
     }
     return;
   }
@@ -704,7 +741,7 @@ async function runEnrichment(
   const won = await applyTransition(current, {
     state: "INELIGIBLE_OFFER",
     draftId: draft.draftId,
-    draftMetrics: draft.metrics,
+    draftMetrics,
     draftScope: {},
   });
   if (won) {
@@ -712,8 +749,14 @@ async function runEnrichment(
       brandId,
       instagramScopedUserId,
       buildMessage("ineligible", {
+        campaignName: campaign?.name ?? "this campaign",
+        creatorGreeting: identityVars.creatorGreeting,
+        failedFollowerThreshold: draft.gatekeeper.failedFollowerThreshold,
+        failedEngagementThreshold: draft.gatekeeper.failedEngagementThreshold,
+        followerCount: draft.metrics.followerCount,
+        engagementRate: draft.metrics.engagementRate,
         minFollowers: campaign?.minFollowers ?? 0,
-        minEngagement: campaign ? Number(campaign.minEngagementRate) : 0,
+        minEngagementRate: campaign ? Number(campaign.minEngagementRate) : 0,
       }),
     );
   }
@@ -766,6 +809,9 @@ async function runSubmit(
   });
 
   const brand = await prisma.brand.findUnique({ where: { id: brandId } });
+  const identity = buildIdentityVarsFromDraftMetrics(
+    conversation.draftMetrics as DraftMetricsSnapshot | null,
+  );
   const message =
     result.matchTier === "ARCHIVED"
       ? buildMessage("submitted_archived", {
@@ -774,6 +820,7 @@ async function runSubmit(
       : buildMessage("submitted_qualified", {
           estimate: result.formattedPayout,
           brandName: brand?.companyName ?? "the brand",
+          creatorGreeting: identity.creatorGreeting,
         });
 
   await send(brandId, instagramScopedUserId, message);

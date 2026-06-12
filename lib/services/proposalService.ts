@@ -1,8 +1,9 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { calculateProposalPayout } from "@/lib/pricing/calculateProposalPayout";
+import { calculateProposalPayoutBreakdown } from "@/lib/pricing/calculateProposalPayoutBreakdown";
 import { evaluateProposal } from "@/lib/pricing/evaluateProposal";
-import type { MatchTier, RequestedScope } from "@/lib/pricing/types";
+import { formatPayoutBreakdown } from "@/lib/pricing/formatPayoutBreakdown";
+import type { MatchTier, PayoutBreakdown, RequestedScope } from "@/lib/pricing/types";
 import { formatCents } from "@/lib/money";
 import { getEnrichmentProvider } from "@/lib/enrichment";
 import {
@@ -204,16 +205,19 @@ export type EstimateOutcome =
       ok: true;
       calculatedPayoutCents: number;
       formattedPayout: string;
+      breakdown: PayoutBreakdown;
+      formattedBreakdown: string;
       matchTier: MatchTier;
     };
 
 function computeForDraft(draft: DraftWithCampaign, scope: RequestedScope) {
   const pricing = campaignToPricing(draft.campaign);
-  const calculatedPayoutCents = calculateProposalPayout({
+  const breakdown = calculateProposalPayoutBreakdown({
     pricing,
     followerCount: draft.followerCount,
     scope,
   });
+  const calculatedPayoutCents = breakdown.totalCents;
   const evaluation = evaluateProposal({
     pricing,
     metrics: {
@@ -221,7 +225,12 @@ function computeForDraft(draft: DraftWithCampaign, scope: RequestedScope) {
       engagementRate: Number(draft.engagementRate),
     },
   });
-  return { calculatedPayoutCents, matchTier: evaluation.matchTier };
+  return {
+    calculatedPayoutCents,
+    formattedBreakdown: formatPayoutBreakdown(breakdown),
+    breakdown,
+    matchTier: evaluation.matchTier,
+  };
 }
 
 export async function estimateProposal(
@@ -234,11 +243,14 @@ export async function estimateProposal(
     return { ok: false, reason: "DRAFT_EXPIRED" };
   }
 
-  const { calculatedPayoutCents, matchTier } = computeForDraft(draft, scope);
+  const { calculatedPayoutCents, breakdown, formattedBreakdown, matchTier } =
+    computeForDraft(draft, scope);
   return {
     ok: true,
     calculatedPayoutCents,
     formattedPayout: formatCents(calculatedPayoutCents),
+    breakdown,
+    formattedBreakdown,
     matchTier,
   };
 }
@@ -250,6 +262,8 @@ export type SubmitOutcome =
       proposalId: string;
       calculatedPayoutCents: number;
       formattedPayout: string;
+      breakdown: PayoutBreakdown;
+      formattedBreakdown: string;
       matchTier: MatchTier;
     };
 
@@ -264,7 +278,8 @@ export async function submitProposal(
   }
 
   // Recalculate server-side from the persisted (trusted) draft metrics.
-  const { calculatedPayoutCents, matchTier } = computeForDraft(draft, scope);
+  const { calculatedPayoutCents, breakdown, formattedBreakdown, matchTier } =
+    computeForDraft(draft, scope);
 
   const proposal = await prisma.proposal.create({
     data: {
@@ -301,6 +316,8 @@ export async function submitProposal(
     proposalId: proposal.id,
     calculatedPayoutCents,
     formattedPayout: formatCents(calculatedPayoutCents),
+    breakdown,
+    formattedBreakdown,
     matchTier,
   };
 }

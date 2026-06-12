@@ -209,6 +209,9 @@ beforeEach(() => {
     ok: true,
     calculatedPayoutCents: 50000,
     formattedPayout: "$500.00",
+    formattedBreakdown:
+      "$500.00 base (50K followers) + $250.00 reel = $750.00",
+    breakdown: {},
     matchTier: "GREEN",
   });
   submitProposalMock.mockReset().mockResolvedValue({
@@ -216,6 +219,9 @@ beforeEach(() => {
     proposalId: "p1",
     calculatedPayoutCents: 50000,
     formattedPayout: "$500.00",
+    formattedBreakdown:
+      "$500.00 base (50K followers) + $250.00 reel = $750.00",
+    breakdown: {},
     matchTier: "GREEN",
   });
 });
@@ -274,7 +280,7 @@ describe("DM conversation state machine", () => {
 
     await deliver("2", send); // usage = 30 days
     expect(conversation()!.state).toBe("ESTIMATE_REVIEW");
-    expect(sent.at(-1)).toContain("$500.00");
+    expect(sent.at(-1)).toContain("$500.00 base (50K followers)");
 
     await deliver("submit", send);
     expect(conversation()!.state).toBe("COMPLETED");
@@ -298,7 +304,7 @@ describe("DM conversation state machine", () => {
     await deliver("start", send);
     await deliver("STOP", send);
     expect(conversation()!.state).toBe("STOPPED");
-    expect(sent.at(-1)).toContain("won’t send any more automated messages");
+    expect(sent.at(-1)).toContain("won't send any more automated messages");
   });
 
   it("re-asks on the empty-scope guard (0 reels + 0 stories)", async () => {
@@ -326,7 +332,7 @@ describe("DM conversation state machine", () => {
     await deliver("collab", send);
     await deliver("start", send);
     expect(conversation()!.state).toBe("INELIGIBLE_OFFER");
-    expect(sent.at(-1)).toContain("not a fit");
+    expect(sent.at(-1)).toContain("short");
 
     await deliver("submit", send);
     expect(conversation()!.state).toBe("SCOPE_REELS");
@@ -356,7 +362,7 @@ describe("DM conversation state machine", () => {
       storiesCount: 1,
       adUsageDays: 30,
     });
-    expect(sent.at(-1)).toContain("$500.00");
+    expect(sent.at(-1)).toContain("$500.00 base (50K followers)");
   });
 
   it("still drives the plain numeric path (regression)", async () => {
@@ -367,7 +373,7 @@ describe("DM conversation state machine", () => {
     await deliver("1", send);
     await deliver("2", send); // usage = 30
     expect(conversation()!.state).toBe("ESTIMATE_REVIEW");
-    expect(sent.at(-1)).toContain("$500.00");
+    expect(sent.at(-1)).toContain("$500.00 base (50K followers)");
   });
 
   it("completes via a SUBMIT postback at ESTIMATE_REVIEW", async () => {
@@ -390,7 +396,7 @@ describe("DM conversation state machine", () => {
     await deliver("start", send);
     await deliverPayload(Payload.STOP, send, "Stop");
     expect(conversation()!.state).toBe("STOPPED");
-    expect(sent.at(-1)).toContain("won’t send any more automated messages");
+    expect(sent.at(-1)).toContain("won't send any more automated messages");
   });
 });
 
@@ -460,7 +466,7 @@ describe("DM free-text scope parsing (Phase B)", () => {
       storiesCount: 1,
       adUsageDays: 30,
     });
-    expect(sent.at(-1)).toContain("$500.00");
+    expect(sent.at(-1)).toContain("$500.00 base (50K followers)");
   });
 
   it("supports a CONFIRM postback from SCOPE_CONFIRM", async () => {
