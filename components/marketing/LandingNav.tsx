@@ -32,15 +32,19 @@ export function LandingNav({
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
               href="/creator/signin"
+              aria-label="Creator sign in"
               className="inline-flex h-11 items-center justify-center rounded-full bg-surface px-5 font-mono text-xs font-medium tracking-wide text-foreground uppercase ring-1 ring-border-strong transition-colors hover:bg-surface-muted"
             >
-              Creator sign in
+              <span className="sm:hidden">Creator</span>
+              <span className="hidden sm:inline">Creator sign in</span>
             </Link>
             <Link
               href="/brand/signin"
+              aria-label="Brand sign in"
               className="inline-flex h-11 items-center justify-center rounded-full bg-primary px-5 font-mono text-xs font-medium tracking-wide text-primary-foreground uppercase transition-colors hover:bg-primary-hover"
             >
-              Brand sign in
+              <span className="sm:hidden">Brand</span>
+              <span className="hidden sm:inline">Brand sign in</span>
             </Link>
           </div>
         )}
