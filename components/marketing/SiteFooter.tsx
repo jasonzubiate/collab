@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 const BRAND_LINKS = [
+  { href: "/pricing", label: "Pricing" },
   { href: "/brand/signup", label: "Brand sign up" },
   { href: "/brand/signin", label: "Brand sign in" },
 ];

@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { ChecklistIcon } from "@/components/marketing/ChecklistIcon";
+
 const BEFORE_ITEMS = [
   "Digging through hashtags and DMs to find creators who actually fit your brand.",
   "Manually checking follower counts and engagement before every outreach.",
@@ -14,26 +16,6 @@ const AFTER_ITEMS = [
   "Approve, counter, or pass in one click — contracts move at the speed of DMs.",
 ];
 
-function CheckIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 20 20"
-      fill="none"
-      aria-hidden
-      className={className}
-    >
-      <rect width="20" height="20" rx="6" fill="currentColor" />
-      <path
-        d="M6 10.5l2.5 2.5L14 7.5"
-        stroke="var(--check-mark, #ffffff)"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 function ChecklistRow({
   children,
   iconClassName,
@@ -47,7 +29,7 @@ function ChecklistRow({
     <li
       className={`flex items-start gap-4 border-t py-4 first:border-t-0 ${rowClassName}`}
     >
-      <CheckIcon className={`mt-0.5 h-5 w-5 shrink-0 ${iconClassName}`} />
+      <ChecklistIcon className={`mt-0.5 h-5 w-5 shrink-0 ${iconClassName}`} />
       <span className="max-w-md font-mono text-xs leading-relaxed tracking-wide uppercase">
         {children}
       </span>

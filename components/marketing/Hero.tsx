@@ -22,12 +22,18 @@ export function Hero({
             Instagram into your creator pipeline.
           </p>
 
-          <div className="mt-9">
+          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
             <Link
               href={primaryHref}
-              className="inline-flex h-13 items-center justify-center rounded-full bg-zinc-950 px-8 font-mono text-sm font-medium tracking-wide text-white uppercase transition-colors hover:bg-zinc-800"
+              className="inline-flex h-13 w-full items-center justify-center rounded-full bg-zinc-950 px-8 font-mono text-sm font-medium tracking-wide text-white uppercase transition-colors hover:bg-zinc-800 sm:w-auto"
             >
               {primaryLabel}
+            </Link>
+            <Link
+              href="/pricing"
+              className="inline-flex h-13 w-full items-center justify-center rounded-full bg-white/70 px-8 font-mono text-sm font-medium tracking-wide text-zinc-950 uppercase ring-1 ring-zinc-950/20 transition-colors hover:bg-white sm:w-auto"
+            >
+              View plans
             </Link>
           </div>
         </div>
