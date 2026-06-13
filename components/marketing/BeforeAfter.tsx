@@ -59,10 +59,10 @@ export function BeforeAfter({ primaryHref }: { primaryHref: string }) {
   return (
     <section className="bg-background px-5 pt-8 pb-20 sm:px-6 sm:pt-12 sm:pb-28">
       <div className="mx-auto mb-12 max-w-2xl text-center sm:mb-16">
-        <h2 className="font-display text-3xl leading-[0.95] font-extrabold tracking-tight text-zinc-950 text-balance sm:text-5xl">
+        <h2 className="font-display text-3xl leading-[0.95] font-extrabold tracking-tighter text-zinc-950 text-balance sm:text-5xl">
           Working with creators should be as easy as a DM
         </h2>
-        <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground text-balance">
+        <p className="mx-auto mt-4 max-w-xl text-lg leading-tight text-muted-foreground text-balance">
           Collab turns the messy hunt for the right creators into a single,
           streamlined pipeline — from first hello to signed contract.
         </p>
@@ -74,7 +74,7 @@ export function BeforeAfter({ primaryHref }: { primaryHref: string }) {
           <p className="font-mono text-xs font-medium tracking-wide text-muted-foreground uppercase">
             Before Collab
           </p>
-          <h3 className="mt-4 font-display text-3xl leading-[0.95] font-extrabold tracking-tight text-zinc-950 text-balance sm:text-4xl">
+          <h3 className="mt-4 font-display text-3xl leading-[0.95] font-extrabold tracking-tighter text-zinc-950 text-balance sm:text-4xl">
             Finding creators the hard way
           </h3>
 
@@ -109,7 +109,7 @@ export function BeforeAfter({ primaryHref }: { primaryHref: string }) {
           <p className="font-mono text-xs font-medium tracking-wide text-primary uppercase">
             After Collab
           </p>
-          <h3 className="mt-4 font-display text-3xl leading-[0.95] font-extrabold tracking-tight text-balance sm:text-4xl">
+          <h3 className="mt-4 font-display text-3xl leading-[0.95] font-extrabold tracking-tighter text-balance sm:text-4xl">
             Vetted, priced, and ready to sign
           </h3>
 

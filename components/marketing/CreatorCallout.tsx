@@ -14,7 +14,7 @@ export function CreatorCallout() {
           <p className="font-mono text-xs font-medium tracking-wide text-muted-foreground uppercase">
             For creators
           </p>
-          <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+          <h2 className="mt-4 text-2xl font-semibold tracking-tighter text-foreground sm:text-3xl">
             Pitch brands without the guesswork
           </h2>
           <ul className="mt-6 flex flex-col gap-3">

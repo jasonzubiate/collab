@@ -20,10 +20,10 @@ export function HowItWorks() {
   return (
     <section className="bg-background px-5 pb-20 sm:px-6 sm:pb-28">
       <div className="mx-auto max-w-5xl">
-        <h2 className="max-w-2xl font-display text-3xl leading-[0.95] font-extrabold tracking-tight text-zinc-950 text-balance sm:text-5xl">
+        <h2 className="max-w-2xl font-display text-3xl leading-[0.95] font-extrabold tracking-tighter text-zinc-950 text-balance sm:text-5xl">
           From first DM to signed deal
         </h2>
-        <p className="mt-4 max-w-xl text-lg text-muted-foreground">
+        <p className="mt-4 max-w-xl text-lg leading-tight text-muted-foreground">
           Three steps replace the spreadsheets, the back-and-forth, and the
           guesswork.
         </p>
@@ -41,7 +41,7 @@ export function HowItWorks() {
               <h3 className="mt-6 text-xl font-semibold text-foreground">
                 {s.title}
               </h3>
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              <p className="mt-3 text-sm leading-tight text-muted-foreground">
                 {s.body}
               </p>
             </div>

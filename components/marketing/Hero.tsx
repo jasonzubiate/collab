@@ -17,29 +17,26 @@ export function Hero({
 }) {
   return (
     <section className="relative overflow-x-clip bg-primary text-zinc-950">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 select-none bg-[linear-gradient(to_right,rgba(9,9,11,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(9,9,11,0.06)_1px,transparent_1px)] bg-size-[64px_64px]"
-      />
-
       <div className="relative mx-auto max-w-5xl px-5 pt-32 pb-20 sm:px-6 sm:pt-40 sm:pb-24">
-        <h1 className="max-w-3xl font-display text-5xl leading-[0.92] font-extrabold tracking-tight text-balance sm:text-7xl">
-          Your creator collabs just got smarter
-        </h1>
+        <div className="text-center">
+          <h1 className="mx-auto max-w-3xl font-display text-5xl leading-[0.92] font-extrabold tracking-tighter text-balance sm:text-7xl">
+            Your creator collabs just got smarter
+          </h1>
 
-        <p className="mt-6 max-w-xl text-lg leading-relaxed text-zinc-800 sm:text-xl">
-          Collab turns every DM and intake form into vetted, priced,
-          ready-to-sign creator deals — so you stop guessing on fit, rates, and
-          contracts.
-        </p>
+          <p className="mx-auto mt-6 max-w-xl text-lg leading-tight text-zinc-800 sm:text-xl">
+            Collab turns every DM and intake form into vetted, priced,
+            ready-to-sign creator deals — so you stop guessing on fit, rates, and
+            contracts.
+          </p>
 
-        <div className="mt-9">
-          <Link
-            href={primaryHref}
-            className="inline-flex h-13 items-center justify-center rounded-full bg-zinc-950 px-8 font-mono text-sm font-medium tracking-wide text-white uppercase transition-colors hover:bg-zinc-800"
-          >
-            {primaryLabel}
-          </Link>
+          <div className="mt-9">
+            <Link
+              href={primaryHref}
+              className="inline-flex h-13 items-center justify-center rounded-full bg-zinc-950 px-8 font-mono text-sm font-medium tracking-wide text-white uppercase transition-colors hover:bg-zinc-800"
+            >
+              {primaryLabel}
+            </Link>
+          </div>
         </div>
 
         <ul className="mt-10 mb-12 flex flex-wrap items-center gap-x-6 gap-y-3 font-mono text-xs tracking-wide text-zinc-700 uppercase">

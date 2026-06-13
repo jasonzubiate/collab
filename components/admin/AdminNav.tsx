@@ -1,71 +1,29 @@
-"use client";
+import { auth } from "@/auth";
+import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import type { DashboardNavLink } from "@/components/dashboard/types";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { cn } from "@/lib/cn";
-import { signOutAction } from "@/app/actions/auth";
-
-const links = [
-  { href: "/admin/proposals", label: "Proposals" },
-  { href: "/admin/campaigns", label: "Campaigns" },
-  { href: "/admin/settings/instagram", label: "Settings" },
+const links: DashboardNavLink[] = [
+  { href: "/admin/proposals", label: "Proposals", icon: "inbox" },
+  { href: "/admin/campaigns", label: "Campaigns", icon: "megaphone" },
+  { href: "/admin/settings/instagram", label: "Settings", icon: "settings" },
 ];
 
-export function AdminNav({
-  brandName,
-  email,
-}: {
-  brandName: string;
-  email: string;
-}) {
-  const pathname = usePathname();
+export async function AdminNav({ children }: { children: React.ReactNode }) {
+  const session = await auth();
 
   return (
-    <header className="sticky top-0 z-10 border-b border-border bg-surface/80 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4 sm:px-6">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold tracking-tight text-foreground">
-            Collab
-          </span>
-          <span className="hidden text-xs text-muted-foreground sm:inline">
-            / {brandName}
-          </span>
-        </div>
-
-        <nav className="flex items-center gap-1">
-          {links.map((link) => {
-            const active = pathname.startsWith(link.href);
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-surface-muted text-foreground"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="ml-auto flex items-center gap-3">
-          <span className="hidden text-xs text-muted-foreground sm:inline">
-            {email}
-          </span>
-          <form action={signOutAction}>
-            <button
-              type="submit"
-              className="rounded-md px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Sign out
-            </button>
-          </form>
-        </div>
-      </div>
-    </header>
+    <DashboardShell
+      homeHref="/admin/proposals"
+      identityLabel="Collab"
+      links={links}
+      user={{
+        name: session?.user?.name,
+        email: session?.user?.email,
+        image: session?.user?.image,
+        profileHref: "/admin/profile",
+      }}
+    >
+      {children}
+    </DashboardShell>
   );
 }

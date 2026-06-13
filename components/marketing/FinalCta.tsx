@@ -15,10 +15,10 @@ export function FinalCta({
           className="pointer-events-none absolute inset-0 select-none bg-[linear-gradient(to_right,rgba(9,9,11,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(9,9,11,0.06)_1px,transparent_1px)] bg-size-[48px_48px]"
         />
         <div className="relative">
-          <h2 className="max-w-2xl font-display text-4xl leading-[0.95] font-extrabold tracking-tight text-balance sm:text-6xl">
+          <h2 className="max-w-2xl font-display text-4xl leading-[0.95] font-extrabold tracking-tighter text-balance sm:text-6xl">
             Stop chasing creators. Start closing collabs.
           </h2>
-          <p className="mt-5 max-w-lg text-lg text-zinc-800">
+          <p className="mt-5 max-w-lg text-lg leading-tight text-zinc-800">
             Set your rules once and let vetted, ready-to-sign deals come to you.
           </p>
           <Link

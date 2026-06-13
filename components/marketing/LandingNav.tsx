@@ -8,7 +8,7 @@ export function LandingNav({
 }) {
   return (
     <header className="fixed top-4 right-4 left-4 z-50 md:top-6">
-      <div className="mx-auto flex w-full max-w-5xl items-center justify-between rounded-3xl bg-white/70 p-3 backdrop-blur-md sm:px-5">
+      <div className="mx-auto flex w-full max-w-xl items-center justify-between rounded-3xl bg-white/70 p-3 backdrop-blur-md sm:px-5">
         <Link href="/" aria-label="Collab home" className="shrink-0">
           <Image
             src="/collab-full-logo.png"

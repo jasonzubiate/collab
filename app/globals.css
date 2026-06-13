@@ -25,6 +25,30 @@
   --danger-soft: #fee2e2;
 }
 
+.dark {
+  --background: #09090b;
+  --surface: #18181b;
+  --surface-muted: #27272a;
+  --foreground: #fafafa;
+  --muted-foreground: #a1a1aa;
+  --border: #3f3f46;
+  --border-strong: #52525b;
+  --primary: #ddff48;
+  --primary-hover: #ccf52c;
+  --primary-foreground: #09090b;
+  --ring: #b0cc2e;
+
+  --tier-green: #4ade80;
+  --tier-green-soft: #14532d;
+  --tier-yellow: #fbbf24;
+  --tier-yellow-soft: #78350f;
+  --tier-archived: #a1a1aa;
+  --tier-archived-soft: #3f3f46;
+
+  --danger: #f87171;
+  --danger-soft: #450a0a;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);

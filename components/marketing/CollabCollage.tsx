@@ -58,7 +58,7 @@ function PayoutCard({ className = "" }: { className?: string }) {
       <p className="font-mono text-[10px] tracking-wide text-primary uppercase">
         Auto-priced payout
       </p>
-      <p className="mt-2 font-display text-3xl font-extrabold tracking-tight tabular-nums">
+      <p className="mt-2 font-display text-3xl font-extrabold tracking-tighter tabular-nums">
         $1,450
       </p>
       <p className="mt-1 font-mono text-[11px] tracking-wide text-zinc-400 uppercase">
@@ -135,7 +135,7 @@ export function CollabCollage() {
       <div className="relative mx-auto max-w-6xl lg:flex lg:min-h-136 lg:items-center lg:justify-center">
         {/* Center copy */}
         <div className="relative z-10 mx-auto max-w-3xl text-center">
-          <h2 className="font-display text-5xl leading-[0.95] font-extrabold tracking-tight text-zinc-950 text-balance sm:text-7xl">
+          <h2 className="font-display text-5xl leading-[0.95] font-extrabold tracking-tighter text-zinc-950 text-balance sm:text-7xl">
             Where brands and creators{" "}
             <span className="inline-block rounded-2xl bg-primary px-3 pb-1 text-primary-foreground [box-decoration-break:clone]">
               click
