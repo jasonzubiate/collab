@@ -58,7 +58,7 @@ const TEMPLATES: Record<Exclude<TemplateKey, "ineligible">, string> = {
 const LEGACY_INELIGIBLE =
   "Based on this campaign's criteria ({{minFollowers}}+ followers, {{minEngagement}}%+ engagement), you're not a fit right now. Reply SUBMIT to save your details anyway, or STOP.";
 
-export type TemplateVars = Record<string, string | number>;
+export type TemplateVars = Record<string, string | number | boolean>;
 
 export type IneligibleTemplateVars = TemplateVars & {
   campaignName: string;
