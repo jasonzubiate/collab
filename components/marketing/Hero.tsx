@@ -17,16 +17,15 @@ export function Hero({
 }) {
   return (
     <section className="relative overflow-x-clip bg-primary text-zinc-950">
-      <div className="relative mx-auto max-w-5xl px-5 pt-32 pb-20 sm:px-6 sm:pt-40 sm:pb-24">
+      <div className="relative mx-auto max-w-5xl px-5 pt-32 pb-20 sm:px-6 sm:pt-44 sm:pb-24">
         <div className="text-center">
-          <h1 className="mx-auto max-w-3xl font-display text-5xl leading-[0.92] font-extrabold tracking-tighter text-balance sm:text-7xl">
+          <h1 className="mx-auto max-w-4xl font-display text-5xl leading-[0.92] font-extrabold tracking-tighter text-balance sm:text-8xl">
             Your creator collabs just got smarter
           </h1>
 
           <p className="mx-auto mt-6 max-w-xl text-lg leading-tight text-zinc-800 sm:text-xl">
-            Collab turns every DM and intake form into vetted, priced,
-            ready-to-sign creator deals — so you stop guessing on fit, rates, and
-            contracts.
+            Inbound DMs. Auto-vetted matches. Upfront pricing. Collab turns
+            Instagram into your creator pipeline.
           </p>
 
           <div className="mt-9">
