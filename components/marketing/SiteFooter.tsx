@@ -41,7 +41,7 @@ function FooterColumn({
 
 export function SiteFooter() {
   return (
-    <footer className="bg-zinc-950 px-5 py-14 text-white sm:px-6">
+    <footer className="bg-zinc-950 px-4 py-14 text-white sm:px-6">
       <div className="mx-auto flex max-w-5xl flex-col justify-between gap-10 sm:flex-row">
         <div className="max-w-xs">
           <Image

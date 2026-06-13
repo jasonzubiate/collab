@@ -18,7 +18,7 @@ const STEPS = [
 
 export function HowItWorks() {
   return (
-    <section className="bg-background px-5 pb-20 sm:px-6 sm:pb-28">
+    <section className="bg-background px-4 pb-20 sm:px-6 sm:pb-28">
       <div className="mx-auto max-w-5xl">
         <h2 className="max-w-2xl font-display text-3xl leading-[0.95] font-extrabold tracking-tighter text-zinc-950 text-balance sm:text-5xl">
           From first DM to signed deal

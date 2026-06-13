@@ -8,7 +8,7 @@ const CREATOR_POINTS = [
 
 export function CreatorCallout() {
   return (
-    <section className="bg-background px-5 pb-20 sm:px-6 sm:pb-28">
+    <section className="bg-background px-4 pb-20 sm:px-6 sm:pb-28">
       <div className="mx-auto flex max-w-5xl flex-col items-start justify-between gap-8 rounded-3xl border border-border bg-surface p-8 sm:p-10 lg:flex-row lg:items-center">
         <div className="max-w-xl">
           <p className="font-mono text-xs font-medium tracking-wide text-muted-foreground uppercase">

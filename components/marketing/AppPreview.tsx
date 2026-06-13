@@ -61,7 +61,7 @@ export function DashboardMock({ className = "" }: { className?: string }) {
       aria-label="Collab dashboard showing incoming creator proposals automatically sorted into green, review, and archived match tiers with estimated payouts."
       className={`overflow-hidden rounded-2xl bg-zinc-900 ring-1 ring-white/10 select-none ${className}`}
     >
-          <div className="flex items-center gap-2 border-b border-white/10 px-5 py-4">
+          <div className="flex items-center gap-2 border-b border-white/10 px-4 py-4">
             <span className="h-3 w-3 rounded-full bg-zinc-700" />
             <span className="h-3 w-3 rounded-full bg-zinc-700" />
             <span className="h-3 w-3 rounded-full bg-zinc-700" />
@@ -70,7 +70,7 @@ export function DashboardMock({ className = "" }: { className?: string }) {
             </span>
           </div>
 
-          <div className="hidden grid-cols-[1.4fr_1fr_1fr_0.9fr_auto] gap-4 px-5 py-3 font-mono text-[11px] tracking-wide text-zinc-500 uppercase sm:grid">
+          <div className="hidden grid-cols-[1.4fr_1fr_1fr_0.9fr_auto] gap-4 px-4 py-3 font-mono text-[11px] tracking-wide text-zinc-500 uppercase sm:grid">
             <span>Creator</span>
             <span>Followers</span>
             <span>Engagement</span>
@@ -84,7 +84,7 @@ export function DashboardMock({ className = "" }: { className?: string }) {
               return (
                 <li
                   key={row.handle}
-                  className="grid grid-cols-2 items-center gap-3 px-5 py-4 sm:grid-cols-[1.4fr_1fr_1fr_0.9fr_auto] sm:gap-4"
+                  className="grid grid-cols-2 items-center gap-3 px-4 py-4 sm:grid-cols-[1.4fr_1fr_1fr_0.9fr_auto] sm:gap-4"
                 >
                   <span className="font-medium text-white">{row.handle}</span>
                   <span className="font-mono text-sm text-zinc-400 tabular-nums">

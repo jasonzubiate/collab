@@ -11,9 +11,9 @@ export function Hero({
 }) {
   return (
     <section className="relative overflow-x-clip bg-primary text-zinc-950">
-      <div className="relative mx-auto max-w-5xl px-5 pt-40 pb-28 sm:px-6 sm:pt-44 sm:pb-32 lg:overflow-visible lg:pb-36">
+      <div className="relative mx-auto max-w-5xl px-4 pt-32 pb-24 sm:px-6 sm:pt-40 sm:pb-28 lg:overflow-visible lg:pb-36">
         <div className="text-center">
-          <h1 className="mx-auto max-w-4xl font-display text-4xl leading-[0.92] font-extrabold tracking-tighter text-balance sm:text-8xl">
+          <h1 className="mx-auto max-w-4xl font-display text-5xl leading-[0.92] font-extrabold tracking-tighter text-balance sm:text-8xl">
             Your creator collabs just got smarter
           </h1>
 
@@ -32,7 +32,7 @@ export function Hero({
           </div>
         </div>
 
-        <HeroVisual className="mt-14 lg:mt-16" />
+        <HeroVisual className="mt-12 lg:mt-16" />
       </div>
     </section>
   );

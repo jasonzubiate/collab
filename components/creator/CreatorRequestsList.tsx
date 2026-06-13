@@ -64,7 +64,7 @@ export function CreatorRequestsList({
           >
             <button
               type="button"
-              className="flex w-full items-start justify-between gap-4 px-4 py-4 text-left sm:px-5"
+              className="flex w-full items-start justify-between gap-4 px-4 py-4 text-left sm:px-4"
               onClick={() =>
                 setExpandedId(expanded ? null : proposal.id)
               }
@@ -100,7 +100,7 @@ export function CreatorRequestsList({
             </button>
 
             {expanded ? (
-              <div className="border-t border-border px-4 py-4 sm:px-5">
+              <div className="border-t border-border px-4 py-4 sm:px-4">
                 <h3 className="text-sm font-medium text-foreground">
                   Activity
                 </h3>

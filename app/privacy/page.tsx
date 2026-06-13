@@ -43,7 +43,7 @@ export default async function PrivacyPolicyPage() {
     <div className="min-h-dvh bg-background">
       <LandingNav dashboardHref={dashboardHref} />
 
-      <main className="mx-auto max-w-3xl px-5 pt-32 pb-24 sm:px-6">
+      <main className="mx-auto max-w-3xl px-4 pt-32 pb-24 sm:px-6">
         <p className="font-mono text-xs font-medium tracking-wide text-zinc-500 uppercase">
           Legal
         </p>

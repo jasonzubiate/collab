@@ -8,7 +8,7 @@ export function FinalCta({
   primaryLabel: string;
 }) {
   return (
-    <section className="px-5 pb-20 sm:px-6 sm:pb-28">
+    <section className="px-4 pb-20 sm:px-6 sm:pb-28">
       <div className="relative mx-auto max-w-5xl overflow-hidden rounded-3xl bg-primary px-8 py-16 text-zinc-950 sm:px-12 sm:py-20">
         <div
           aria-hidden

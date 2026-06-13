@@ -290,22 +290,22 @@ export function HeroVisual({ className = "" }: { className?: string }) {
       aria-label="Collab pipeline preview: a creator submits scope via Instagram DM quick replies, receives an auto-priced estimate, and appears in the proposals table."
       className={`relative mx-auto w-full max-w-4xl ${className}`}
     >
-      <div className="relative min-h-104 pt-12 pb-16 sm:min-h-96 sm:pt-10 sm:pb-14 lg:min-h-0 lg:pt-0 lg:pb-0">
-        <EstimateCard
-          compact
-          className="absolute top-0 right-0 z-20 w-[44%] max-w-36 rotate-2 sm:max-w-40 md:w-48 lg:hidden"
-        />
+      <div className="relative pb-24 sm:pb-28 lg:min-h-0 lg:pb-0">
         <InstagramChatCard
           compact
-          className="absolute bottom-0 left-0 z-20 w-[52%] max-w-44 -rotate-2 sm:max-w-48 md:w-56 lg:hidden"
+          className="absolute bottom-0 left-0 z-20 w-[48%] max-w-44 -rotate-2 sm:max-w-48 md:w-52 lg:hidden"
+        />
+        <EstimateCard
+          compact
+          className="absolute bottom-0 right-0 z-20 w-[44%] max-w-36 rotate-2 sm:max-w-40 md:w-48 lg:hidden"
         />
 
         <EstimateCard className="absolute -top-6 -right-4 z-20 hidden w-52 rotate-2 lg:block" />
         <InstagramChatCard className="absolute -bottom-8 -left-6 z-20 hidden w-60 -rotate-2 lg:block" />
 
         {/* Mobile/tablet: clip table on the right (Linear-style peek). Desktop: full table + scroll if needed. */}
-        <div className="relative z-10 mt-6 sm:mt-8 lg:mt-0">
-          <div className="relative -mr-5 overflow-hidden rounded-xl shadow-2xl shadow-zinc-950/15 sm:-mr-6 lg:mr-0">
+        <div className="relative z-10 lg:mt-0">
+          <div className="relative -mr-5 overflow-hidden rounded-xl border shadow-2xl shadow-zinc-950/15 sm:-mr-6 lg:mr-0">
             <div className="lg:hidden">
               <ProposalTableMock clipOnMobile />
             </div>

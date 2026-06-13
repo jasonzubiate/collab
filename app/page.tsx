@@ -24,7 +24,7 @@ export default async function HomePage() {
 
       <main>
         <Hero primaryHref={primaryHref} primaryLabel={primaryLabel} />
-        <CollabCollage />
+        {/* <CollabCollage /> */}
         <BeforeAfter primaryHref={primaryHref} />
         <HowItWorks />
         <CreatorCallout />

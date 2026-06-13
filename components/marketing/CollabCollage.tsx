@@ -126,7 +126,7 @@ function SignedCard({ className = "" }: { className?: string }) {
 
 export function CollabCollage() {
   return (
-    <section className="relative overflow-hidden bg-background px-5 pt-40 pb-20 sm:px-6 sm:pt-52 sm:pb-28">
+    <section className="relative overflow-hidden bg-background px-4 pt-40 pb-20 sm:px-6 sm:pt-52 sm:pb-28">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-1/2 -z-10 mx-auto h-112 max-w-3xl -translate-y-1/2 rounded-full bg-primary/20 blur-3xl"

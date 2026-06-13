@@ -191,7 +191,7 @@ export function CreatorIntakeForm({
 
   return (
     <MotionConfig reducedMotion="user">
-      <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 py-8">
+      <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 py-8">
         <header className="mb-6">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {campaign.brand.companyName}
